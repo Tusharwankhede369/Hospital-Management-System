@@ -1,4 +1,3 @@
-# Hospital Management System (HMS)
 
 A complete and fully functional Hospital Management System built with MERN stack (MongoDB, Express.js, React.js, Node.js).
 
