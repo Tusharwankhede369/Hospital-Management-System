@@ -39,10 +39,14 @@ router.get('/', authenticate, async (req, res) => {
     const query = {};
     
     if (search) {
-      query.name = { $regex: search, $options: 'i' };
+      query.name = { $regex: search.trim(), $options: 'i' };
     }
     
-    const medicines = await Medicine.find(query).sort({ name: 1 });
+    let q = Medicine.find(query).sort({ name: 1 });
+    if (search && search.trim().length > 0) {
+      q = q.limit(25);
+    }
+    const medicines = await q;
     res.json(medicines);
   } catch (error) {
     console.error(error);
@@ -126,28 +130,39 @@ router.post('/schedule', authenticate, authorize('doctor', 'staff'), async (req,
     
     const schedules = [];
     
+    const Medicine = require('../models/Medicine');
+
     for (const prescription of prescriptions) {
-      const { medicine, medicineName, dosage, timing, duration, frequency } = prescription;
-      
+      let { medicine, medicineName, dosage, timing, duration, frequency } = prescription;
+      const dur = Number(duration) || 7;
       const startDate = new Date();
       const endDate = new Date();
-      endDate.setDate(endDate.getDate() + duration);
-      
-      // Parse timing
+      endDate.setDate(endDate.getDate() + dur);
+      const timingStr = (timing || 'morning').toString().toLowerCase();
+      const isAll = timingStr === 'all';
+      const hasMorning = isAll || timingStr.includes('morning') || timingStr.includes('breakfast') || timingStr.includes('before_food');
+      const hasAfternoon = isAll || timingStr.includes('afternoon') || timingStr.includes('lunch') || timingStr.includes('after_food');
+      const hasNight = isAll || timingStr.includes('night') || timingStr.includes('dinner');
+
+      if (!medicine && medicineName) {
+        const med = await Medicine.findOne({ name: { $regex: new RegExp(medicineName, 'i') } });
+        if (med) medicine = med._id;
+      }
+
       const timingObj = {
-        morning: timing.includes('morning') ? { time: '09:00', beforeFood: timing.includes('before_food') } : null,
-        afternoon: timing.includes('afternoon') ? { time: '14:00', beforeFood: timing.includes('before_food') } : null,
-        night: timing.includes('night') ? { time: '20:00', beforeFood: timing.includes('before_food') } : null
+        morning: hasMorning ? { time: '09:00', beforeFood: false, given: false } : null,
+        afternoon: hasAfternoon ? { time: '14:00', beforeFood: false, given: false } : null,
+        night: hasNight ? { time: '20:00', beforeFood: false, given: false } : null
       };
-      
+
       const schedule = new MedicineSchedule({
         patient: patientRecord.patient,
         patientRecord: patientRecordId,
-        medicine,
-        medicineName,
+        medicine: medicine || undefined,
+        medicineName: medicineName || 'Prescribed',
         dosage,
         timing: timingObj,
-        duration,
+        duration: dur,
         startDate,
         endDate
       });

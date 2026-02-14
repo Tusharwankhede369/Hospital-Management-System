@@ -8,6 +8,7 @@ const HRRegister = () => {
     email: '',
     password: '',
     phone: '',
+    registrationCode: '',
     salary: ''
   });
   const [error, setError] = useState('');
@@ -23,7 +24,7 @@ const HRRegister = () => {
     setError('');
     setSuccess('');
     try {
-      const res = await axios.post('/api/auth/register-hr', formData);
+      const res = await axios.post('/api/auth/register-hr', { ...formData, registrationCode: formData.registrationCode || undefined });
       if (res.data.token) {
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('user', JSON.stringify(res.data.user));
@@ -39,9 +40,14 @@ const HRRegister = () => {
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
       <div className="card" style={{ width: '400px' }}>
         <h2 style={{ marginBottom: '20px', textAlign: 'center' }}>HR Registration</h2>
+        <p style={{ fontSize: '12px', color: '#666', marginBottom: '15px' }}>HR accounts are usually created by Admin. If you have a registration code, enter it below.</p>
         {error && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
         <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Registration code (from Admin)</label>
+            <input type="password" name="registrationCode" value={formData.registrationCode} onChange={handleChange} placeholder="Required if set by admin" />
+          </div>
           <div className="form-group">
             <label>Name *</label>
             <input

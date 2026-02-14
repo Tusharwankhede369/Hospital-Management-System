@@ -48,6 +48,7 @@ const SalaryApproval = () => {
           <thead>
             <tr>
               <th>Employee</th>
+              <th>Role</th>
               <th>Month/Year</th>
               <th>Total Amount</th>
               <th>Status</th>
@@ -58,6 +59,7 @@ const SalaryApproval = () => {
             {salaries.map(salary => (
               <tr key={salary._id}>
                 <td>{salary.employee?.name}</td>
+                <td>{salary.employee?.role || '—'}</td>
                 <td>{salary.month}/{salary.year}</td>
                 <td>₹{salary.totalAmount}</td>
                 <td>{salary.status}</td>

@@ -29,6 +29,7 @@ const StaffManagement = () => {
         <table className="table">
           <thead>
             <tr>
+              <th>Employee ID</th>
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
@@ -40,6 +41,7 @@ const StaffManagement = () => {
           <tbody>
             {staff.map(s => (
               <tr key={s._id}>
+                <td><code title="Use this ID when creating salary records">{s._id}</code></td>
                 <td>{s.name}</td>
                 <td>{s.email}</td>
                 <td>{s.phone}</td>

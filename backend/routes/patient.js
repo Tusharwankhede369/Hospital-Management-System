@@ -135,5 +135,24 @@ router.get('/payments', authenticate, authorize('patient'), async (req, res) => 
   }
 });
 
+// @route   GET /api/patient/unpaid-appointments
+// @desc    Get appointments that are not yet paid (for patient to pay here)
+// @access  Private (Patient)
+router.get('/unpaid-appointments', authenticate, authorize('patient'), async (req, res) => {
+  try {
+    const appointments = await Appointment.find({
+      patient: req.user._id,
+      paymentStatus: { $ne: 'paid' },
+      status: { $in: ['confirmed', 'completed', 'pending'] }
+    })
+      .populate('doctor', 'name department consultationFees')
+      .sort({ appointmentDate: -1 });
+    res.json(appointments);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;
 

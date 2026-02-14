@@ -36,26 +36,39 @@ router.get('/doctors', authenticate, authorize('hr'), async (req, res) => {
 router.post('/salary', authenticate, authorize('hr'), async (req, res) => {
   try {
     const { employee, month, year, baseSalary, bonus, deduction, overtime, notes } = req.body;
-    
-    const totalAmount = baseSalary + (bonus || 0) - (deduction || 0) + (overtime || 0);
-    
+
+    const monthNum = month !== undefined && month !== '' ? parseInt(month, 10) : new Date().getMonth() + 1;
+    const yearNum = year !== undefined && year !== '' ? parseInt(year, 10) : new Date().getFullYear();
+
+    if (!employee) {
+      return res.status(400).json({ message: 'Employee is required' });
+    }
+    if (!baseSalary && baseSalary !== 0) {
+      return res.status(400).json({ message: 'Base salary is required' });
+    }
+
+    const totalAmount = Number(baseSalary) + (Number(bonus) || 0) - (Number(deduction) || 0) + (Number(overtime) || 0);
+
     const salary = new Salary({
       employee,
-      month,
-      year,
-      baseSalary,
-      bonus: bonus || 0,
-      deduction: deduction || 0,
-      overtime: overtime || 0,
+      month: monthNum,
+      year: yearNum,
+      baseSalary: Number(baseSalary),
+      bonus: Number(bonus) || 0,
+      deduction: Number(deduction) || 0,
+      overtime: Number(overtime) || 0,
       totalAmount,
       preparedBy: req.user._id,
       notes
     });
-    
+
     await salary.save();
     res.json(salary);
   } catch (error) {
     console.error(error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message || 'Validation failed' });
+    }
     res.status(500).json({ message: 'Server error' });
   }
 });

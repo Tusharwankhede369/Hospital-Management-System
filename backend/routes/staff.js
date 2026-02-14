@@ -35,6 +35,34 @@ router.get('/profile', authenticate, authorize('staff'), async (req, res) => {
   }
 });
 
+// @route   GET /api/staff/patients
+// @desc    Get all patients (for dropdowns - cash payment, upload report)
+// @access  Private (Staff)
+router.get('/patients', authenticate, authorize('staff'), async (req, res) => {
+  try {
+    const patients = await User.find({ role: 'patient' }).select('name email phone _id').sort({ name: 1 });
+    res.json(patients);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/staff/my-salary
+// @desc    Get current staff's salary records
+// @access  Private (Staff)
+router.get('/my-salary', authenticate, authorize('staff'), async (req, res) => {
+  try {
+    const Salary = require('../models/Salary');
+    const salaries = await Salary.find({ employee: req.user._id })
+      .sort({ year: -1, month: -1 });
+    res.json(salaries);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   POST /api/staff/patient-entry
 // @desc    Add walk-in patient
 // @access  Private (Staff - Receptionist)

@@ -4,12 +4,19 @@ import moment from 'moment';
 
 const LabReports = () => {
   const [reports, setReports] = useState([]);
+  const [patients, setPatients] = useState([]);
   const [formData, setFormData] = useState({});
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     fetchReports();
   }, []);
+
+  useEffect(() => {
+    if (showForm) {
+      axios.get('/api/doctor/patients').then(res => setPatients(res.data || [])).catch(() => setPatients([]));
+    }
+  }, [showForm]);
 
   const fetchReports = async () => {
     try {
@@ -46,13 +53,18 @@ const LabReports = () => {
           <h3>Request Lab Test</h3>
           <form onSubmit={handleRequest}>
             <div className="form-group">
-              <label>Patient ID</label>
-              <input
-                type="text"
+              <label>Patient *</label>
+              <select
                 value={formData.patient || ''}
                 onChange={(e) => setFormData({ ...formData, patient: e.target.value })}
                 required
-              />
+              >
+                <option value="">Select patient...</option>
+                {patients.map(p => (
+                  <option key={p._id} value={p._id}>{p.name} – {p.email}</option>
+                ))}
+              </select>
+              {patients.length === 0 && <small className="text-muted">No patients found. Patients appear after they book appointments with you.</small>}
             </div>
             <div className="form-group">
               <label>Test Type</label>

@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import "../css/login.css"
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -63,14 +64,14 @@ const Login = () => {
           </button>
         </form>
         <div style={{ marginTop: '15px', textAlign: 'center' }}>
-          <p>Don't have an account? Register as:</p>
+          <p>Don't have an account?</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '10px' }}>
-            <a href="/register">Patient</a>
-            <a href="/register/admin">Admin</a>
-            <a href="/register/doctor">Doctor</a>
-            <a href="/register/hr">HR</a>
-            <a href="/register/staff">Staff</a>
+            <a href="/register">Register as Patient</a>
+            <a href="/register/admin">Register as Admin</a>
           </div>
+          <p style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
+            Doctor, Staff and HR accounts are created by Admin only.
+          </p>
         </div>
       </div>
     </div>

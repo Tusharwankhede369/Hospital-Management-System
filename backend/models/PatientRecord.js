@@ -33,7 +33,7 @@ const patientRecordSchema = new mongoose.Schema({
     dosage: String,
     timing: {
       type: String,
-      enum: ['morning', 'afternoon', 'night', 'before_food', 'after_food']
+      enum: ['morning', 'afternoon', 'night', 'before_food', 'after_food', 'before_breakfast', 'after_breakfast', 'before_lunch', 'after_lunch', 'before_dinner', 'after_dinner', 'all']
     },
     duration: Number, // in days
     frequency: String

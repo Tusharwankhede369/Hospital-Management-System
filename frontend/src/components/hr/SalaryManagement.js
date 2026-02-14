@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import moment from 'moment';
 
 const SalaryManagement = () => {
   const [salaries, setSalaries] = useState([]);
+  const [employees, setEmployees] = useState([]); // staff + doctors for dropdown
   const [formData, setFormData] = useState({});
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -11,6 +11,18 @@ const SalaryManagement = () => {
   useEffect(() => {
     fetchSalaries();
   }, []);
+
+  useEffect(() => {
+    if (showForm) {
+      fetchEmployees();
+      const now = new Date();
+      setFormData(prev => ({
+        ...prev,
+        month: prev.month ?? now.getMonth() + 1,
+        year: prev.year ?? now.getFullYear()
+      }));
+    }
+  }, [showForm]);
 
   const fetchSalaries = async () => {
     try {
@@ -23,10 +35,36 @@ const SalaryManagement = () => {
     }
   };
 
+  const fetchEmployees = async () => {
+    try {
+      const [staffRes, doctorsRes] = await Promise.all([
+        axios.get('/api/hr/staff'),
+        axios.get('/api/hr/doctors')
+      ]);
+      const staff = (staffRes.data || []).map(s => ({ ...s, _roleLabel: 'Staff' }));
+      const doctors = (doctorsRes.data || []).map(d => ({ ...d, _roleLabel: 'Doctor' }));
+      setEmployees([...doctors, ...staff]);
+    } catch (error) {
+      console.error(error);
+      setEmployees([]);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const now = new Date();
+    const payload = {
+      employee: formData.employee,
+      month: formData.month !== undefined && formData.month !== '' ? Number(formData.month) : now.getMonth() + 1,
+      year: formData.year !== undefined && formData.year !== '' ? Number(formData.year) : now.getFullYear(),
+      baseSalary: Number(formData.baseSalary),
+      bonus: formData.bonus !== undefined && formData.bonus !== '' ? Number(formData.bonus) : 0,
+      deduction: formData.deduction !== undefined && formData.deduction !== '' ? Number(formData.deduction) : 0,
+      overtime: formData.overtime !== undefined && formData.overtime !== '' ? Number(formData.overtime) : 0,
+      notes: formData.notes || undefined
+    };
     try {
-      await axios.post('/api/hr/salary', formData);
+      await axios.post('/api/hr/salary', payload);
       alert('Salary record created successfully!');
       setShowForm(false);
       setFormData({});
@@ -51,13 +89,22 @@ const SalaryManagement = () => {
           <h3>Create Salary Record</h3>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Employee ID *</label>
-              <input
-                type="text"
+              <label>Employee *</label>
+              <select
                 value={formData.employee || ''}
                 onChange={(e) => setFormData({ ...formData, employee: e.target.value })}
                 required
-              />
+              >
+                <option value="">Select employee...</option>
+                {employees.map(emp => (
+                  <option key={emp._id} value={emp._id}>
+                    {emp.name} ({emp._roleLabel}){emp.email ? ` – ${emp.email}` : ''}
+                  </option>
+                ))}
+              </select>
+              {employees.length === 0 && (
+                <small className="text-muted">No staff or doctors found. Add users from Admin first.</small>
+              )}
             </div>
             <div className="form-group">
               <label>Month *</label>

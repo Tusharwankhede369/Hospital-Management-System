@@ -62,15 +62,16 @@ const AdminRegister = () => {
             />
           </div>
           <div className="form-group">
-            <label>Password *</label>
+            <label>Admin registration password *</label>
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
+              placeholder="Fixed password required"
               required
-              minLength="6"
             />
+            <small style={{ color: '#666' }}>Contact system owner for the admin registration password.</small>
           </div>
           <div className="form-group">
             <label>Phone *</label>

@@ -6,6 +6,7 @@ import RoomManagement from '../components/staff/RoomManagement';
 import MedicineSchedule from '../components/staff/MedicineSchedule';
 import UploadReport from '../components/staff/UploadReport';
 import CashPayment from '../components/staff/CashPayment';
+import MySalary from '../components/staff/MySalary';
 
 const StaffDashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -47,6 +48,7 @@ const StaffDashboard = () => {
             <Route path="medicine-schedule" element={<MedicineSchedule />} />
             <Route path="upload-report" element={<UploadReport />} />
             <Route path="cash-payment" element={<CashPayment />} />
+            <Route path="my-salary" element={<MySalary />} />
             <Route path="*" element={<Navigate to="/staff/rooms" />} />
           </Routes>
         </div>

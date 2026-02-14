@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import MedicineAutocomplete from '../MedicineAutocomplete';
 
 const MedicineManagement = () => {
   const [medicines, setMedicines] = useState([]);
@@ -51,12 +52,14 @@ const MedicineManagement = () => {
           <form onSubmit={handleCreate}>
             <div className="form-group">
               <label>Medicine Name *</label>
-              <input
-                type="text"
+              <MedicineAutocomplete
                 value={formData.name || ''}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(val) => setFormData({ ...formData, name: val })}
+                onSelect={(med) => setFormData(prev => ({ ...prev, name: med.name, type: med.type || prev.type, price: med.price ?? prev.price }))}
+                placeholder="Type to search (e.g. Paracetamol)..."
                 required
               />
+              <small style={{ color: '#666' }}>Start typing to see matching medicines from the list. You can select one or enter a new name.</small>
             </div>
             <div className="form-group">
               <label>Type *</label>

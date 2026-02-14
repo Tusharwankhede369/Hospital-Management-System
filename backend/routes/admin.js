@@ -25,10 +25,14 @@ router.post('/create-user', authenticate, authorize('admin'), async (req, res) =
       return res.status(400).json({ message: 'User already exists' });
     }
     
+    // Password for doctor/staff/hr is set by admin; use env default if not provided
+    const defaultNewUserPassword = process.env.DEFAULT_NEW_USER_PASSWORD || 'ChangeMe@123';
+    const userPassword = password && password.trim() ? password : defaultNewUserPassword;
+
     user = new User({
       name,
       email,
-      password: password || 'Default@123', // Default password
+      password: userPassword,
       phone,
       role,
       ...roleSpecificFields
@@ -315,7 +319,7 @@ router.put('/salary/:id/mark-paid', authenticate, authorize('admin'), async (req
 router.get('/salaries', authenticate, authorize('admin'), async (req, res) => {
   try {
     const salaries = await Salary.find()
-      .populate('employee', 'name email role')
+      .populate('employee', 'name email role staffType')
       .populate('preparedBy', 'name')
       .populate('approvedBy', 'name')
       .sort({ year: -1, month: -1 });

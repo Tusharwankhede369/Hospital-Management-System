@@ -8,6 +8,29 @@ const Report = require('../models/Report');
 const Room = require('../models/Room');
 const moment = require('moment');
 
+// @route   GET /api/doctor/patients
+// @desc    Get patients (from appointments with this doctor) for dropdowns
+// @access  Private (Doctor)
+router.get('/patients', authenticate, authorize('doctor'), async (req, res) => {
+  try {
+    const appointments = await Appointment.find({ doctor: req.user._id })
+      .populate('patient', 'name email phone')
+      .sort({ appointmentDate: -1 });
+    const seen = new Set();
+    const patients = [];
+    for (const apt of appointments) {
+      if (apt.patient && !seen.has(apt.patient._id.toString())) {
+        seen.add(apt.patient._id.toString());
+        patients.push(apt.patient);
+      }
+    }
+    res.json(patients);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/doctor/profile
 // @desc    Get doctor profile
 // @access  Private (Doctor)
@@ -99,30 +122,31 @@ router.put('/appointments/:id/status', authenticate, authorize('doctor'), async 
 router.post('/patient-record', authenticate, authorize('doctor'), async (req, res) => {
   try {
     const { patient, appointment, diagnosis, symptoms, treatmentPlan, prescriptions, followUpDate, notes } = req.body;
-    
-    let record = await PatientRecord.findOne({ patient, appointment });
-    
+    const apptId = appointment || null;
+
+    let record = await PatientRecord.findOne({ patient, appointment: apptId });
+
     if (record) {
       // Update existing record
-      if (diagnosis) record.diagnosis = diagnosis;
-      if (symptoms) record.symptoms = symptoms;
-      if (treatmentPlan) record.treatmentPlan = treatmentPlan;
-      if (prescriptions) record.prescriptions = prescriptions;
-      if (followUpDate) record.followUpDate = followUpDate;
-      if (notes) record.notes = notes;
+      if (diagnosis !== undefined) record.diagnosis = diagnosis;
+      if (symptoms !== undefined) record.symptoms = symptoms;
+      if (treatmentPlan !== undefined) record.treatmentPlan = treatmentPlan;
+      if (prescriptions && Array.isArray(prescriptions)) record.prescriptions = prescriptions;
+      if (followUpDate !== undefined) record.followUpDate = followUpDate;
+      if (notes !== undefined) record.notes = notes;
       record.updatedBy = req.user._id;
     } else {
       // Create new record
       record = new PatientRecord({
         patient,
         doctor: req.user._id,
-        appointment,
-        diagnosis,
-        symptoms,
-        treatmentPlan,
-        prescriptions,
-        followUpDate,
-        notes,
+        appointment: apptId,
+        diagnosis: diagnosis || '',
+        symptoms: symptoms || [],
+        treatmentPlan: treatmentPlan || '',
+        prescriptions: Array.isArray(prescriptions) ? prescriptions : [],
+        followUpDate: followUpDate || undefined,
+        notes: notes || '',
         updatedBy: req.user._id
       });
     }
@@ -247,7 +271,8 @@ router.post('/request-lab-test', authenticate, authorize('doctor'), async (req, 
       testType,
       testName,
       status: 'pending',
-      notes
+      notes,
+      uploadedBy: req.user._id
     });
     
     await report.save();

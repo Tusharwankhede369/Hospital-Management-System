@@ -68,12 +68,14 @@ const UserManagement = () => {
               />
             </div>
             <div className="form-group">
-              <label>Password</label>
+              <label>Password (optional)</label>
               <input
                 type="password"
                 value={formData.password || ''}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="Leave blank to use default password"
               />
+              <small style={{ color: '#666' }}>Leave blank to use the default new-user password (set in backend).</small>
             </div>
             <div className="form-group">
               <label>Phone *</label>

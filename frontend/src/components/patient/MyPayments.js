@@ -4,10 +4,12 @@ import moment from 'moment';
 
 const MyPayments = () => {
   const [payments, setPayments] = useState([]);
+  const [unpaidAppointments, setUnpaidAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchPayments();
+    fetchUnpaid();
   }, []);
 
   const fetchPayments = async () => {
@@ -21,17 +23,32 @@ const MyPayments = () => {
     }
   };
 
-  const handlePayment = async (paymentId, paymentMode) => {
+  const fetchUnpaid = async () => {
+    try {
+      const res = await axios.get('/api/patient/unpaid-appointments');
+      setUnpaidAppointments(res.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handlePayAppointment = async (appointment, paymentMode) => {
+    const amount = appointment.doctor?.consultationFees || appointment.paymentAmount || 0;
+    if (!amount) {
+      alert('No amount set for this appointment.');
+      return;
+    }
     try {
       await axios.post('/api/payments', {
-        appointment: payments.find(p => p._id === paymentId)?.appointment?._id,
+        appointment: appointment._id,
         paymentType: 'appointment',
-        amount: payments.find(p => p._id === paymentId)?.amount,
+        amount,
         paymentMode,
-        paymentStatus: 'paid'
+        transactionId: 'TXN-' + Date.now()
       });
       alert('Payment successful!');
       fetchPayments();
+      fetchUnpaid();
     } catch (error) {
       alert(error.response?.data?.message || 'Payment failed');
     }
@@ -41,7 +58,38 @@ const MyPayments = () => {
 
   return (
     <div>
-      <h2>Payment History</h2>
+      <h2>Payments</h2>
+      {unpaidAppointments.length > 0 && (
+        <div className="card" style={{ marginBottom: '20px' }}>
+          <h3>Pay here (Unpaid appointments)</h3>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Doctor</th>
+                <th>Department</th>
+                <th>Amount</th>
+                <th>Pay</th>
+              </tr>
+            </thead>
+            <tbody>
+              {unpaidAppointments.map(apt => (
+                <tr key={apt._id}>
+                  <td>{moment(apt.appointmentDate).format('DD/MM/YYYY')} {apt.timeSlot}</td>
+                  <td>{apt.doctor?.name}</td>
+                  <td>{apt.doctor?.department}</td>
+                  <td>₹{apt.doctor?.consultationFees || apt.paymentAmount || '—'}</td>
+                  <td>
+                    <button className="btn btn-success" style={{ marginRight: '8px' }} onClick={() => handlePayAppointment(apt, 'upi')}>UPI</button>
+                    <button className="btn btn-primary" onClick={() => handlePayAppointment(apt, 'card')}>Card</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <h3>Payment History</h3>
       <div className="card">
         <table className="table">
           <thead>
@@ -76,26 +124,7 @@ const MyPayments = () => {
                       {payment.paymentStatus}
                     </span>
                   </td>
-                  <td>
-                    {payment.paymentStatus === 'pending' && payment.paymentType === 'appointment' && (
-                      <div>
-                        <button
-                          className="btn btn-success"
-                          onClick={() => handlePayment(payment._id, 'upi')}
-                          style={{ padding: '5px 10px', fontSize: '14px', marginRight: '5px' }}
-                        >
-                          Pay via UPI
-                        </button>
-                        <button
-                          className="btn btn-primary"
-                          onClick={() => handlePayment(payment._id, 'card')}
-                          style={{ padding: '5px 10px', fontSize: '14px' }}
-                        >
-                          Pay via Card
-                        </button>
-                      </div>
-                    )}
-                  </td>
+                  <td>—</td>
                 </tr>
               ))
             )}

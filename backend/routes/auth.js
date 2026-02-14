@@ -203,13 +203,16 @@ router.post('/reset-password', [
   }
 });
 
+// Fixed admin registration password (only this password allows admin registration)
+const ADMIN_REGISTRATION_PASSWORD = 'Tushar@hmsadmin$1977';
+
 // @route   POST /api/auth/register-admin
-// @desc    Register admin (allow first admin or with setup key)
+// @desc    Register admin (fixed password required; only first admin can register)
 // @access  Public
 router.post('/register-admin', [
   body('name').notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('Please provide a valid email'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('password').notEmpty().withMessage('Password is required'),
   body('phone').notEmpty().withMessage('Phone number is required'),
 ], async (req, res) => {
   try {
@@ -219,6 +222,10 @@ router.post('/register-admin', [
     }
 
     const { name, email, password, phone } = req.body;
+
+    if (password !== ADMIN_REGISTRATION_PASSWORD) {
+      return res.status(403).json({ message: 'Invalid admin registration password.' });
+    }
 
     // Check if any admin exists
     const existingAdmin = await User.findOne({ role: 'admin' });
@@ -261,8 +268,11 @@ router.post('/register-admin', [
   }
 });
 
+// Registration code for Doctor/Staff/HR self-registration (must match DEFAULT_NEW_USER_PASSWORD or set REGISTRATION_CODE)
+const getRegistrationCode = () => process.env.REGISTRATION_CODE || process.env.DEFAULT_NEW_USER_PASSWORD;
+
 // @route   POST /api/auth/register-doctor
-// @desc    Register doctor
+// @desc    Register doctor (requires registration code from admin if set)
 // @access  Public
 router.post('/register-doctor', [
   body('name').notEmpty().withMessage('Name is required'),
@@ -271,6 +281,10 @@ router.post('/register-doctor', [
   body('phone').notEmpty().withMessage('Phone number is required'),
 ], async (req, res) => {
   try {
+    const code = getRegistrationCode();
+    if (code && req.body.registrationCode !== code) {
+      return res.status(403).json({ message: 'Invalid registration code. Contact admin for the code.' });
+    }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -318,7 +332,7 @@ router.post('/register-doctor', [
 });
 
 // @route   POST /api/auth/register-hr
-// @desc    Register HR
+// @desc    Register HR (requires registration code from admin if set)
 // @access  Public
 router.post('/register-hr', [
   body('name').notEmpty().withMessage('Name is required'),
@@ -327,6 +341,10 @@ router.post('/register-hr', [
   body('phone').notEmpty().withMessage('Phone number is required'),
 ], async (req, res) => {
   try {
+    const code = getRegistrationCode();
+    if (code && req.body.registrationCode !== code) {
+      return res.status(403).json({ message: 'Invalid registration code. Contact admin for the code.' });
+    }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -371,7 +389,7 @@ router.post('/register-hr', [
 });
 
 // @route   POST /api/auth/register-staff
-// @desc    Register staff
+// @desc    Register staff (requires registration code from admin if set)
 // @access  Public
 router.post('/register-staff', [
   body('name').notEmpty().withMessage('Name is required'),
@@ -380,6 +398,10 @@ router.post('/register-staff', [
   body('phone').notEmpty().withMessage('Phone number is required'),
 ], async (req, res) => {
   try {
+    const code = getRegistrationCode();
+    if (code && req.body.registrationCode !== code) {
+      return res.status(403).json({ message: 'Invalid registration code. Contact admin for the code.' });
+    }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });

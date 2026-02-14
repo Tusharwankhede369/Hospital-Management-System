@@ -11,6 +11,7 @@ router.post('/', authenticate, authorize('patient', 'staff', 'admin'), async (re
   try {
     const { appointment, paymentType, amount, paymentMode, transactionId, notes } = req.body;
     
+    const isPatientPaying = req.user.role === 'patient';
     const payment = new Payment({
       patient: req.user.role === 'patient' ? req.user._id : req.body.patient,
       appointment,
@@ -18,8 +19,8 @@ router.post('/', authenticate, authorize('patient', 'staff', 'admin'), async (re
       amount,
       paymentMode,
       transactionId,
-      paymentStatus: paymentMode === 'cash' ? 'paid' : 'pending',
-      paidBy: req.user.role === 'patient' ? req.user._id : null,
+      paymentStatus: (paymentMode === 'cash' || isPatientPaying) ? 'paid' : 'pending',
+      paidBy: isPatientPaying ? req.user._id : null,
       receivedBy: req.user.role === 'staff' ? req.user._id : null,
       notes
     });
@@ -31,7 +32,7 @@ router.post('/', authenticate, authorize('patient', 'staff', 'admin'), async (re
       const apt = await Appointment.findById(appointment);
       if (apt) {
         apt.paymentStatus = payment.paymentStatus;
-        apt.paymentAmount = amount;
+        apt.paymentAmount = amount || apt.paymentAmount;
         await apt.save();
       }
     }
