@@ -13,6 +13,17 @@ const apiBaseURL =
 
 axios.defaults.baseURL = apiBaseURL;
 
+// Attach JWT token (if present) for protected API routes.
+// This ensures even components using raw `axios` send Authorization header after refresh/deploy.
+try {
+  const token = localStorage.getItem('token');
+  if (token) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  }
+} catch {
+  // ignore storage errors (private mode, blocked storage, etc.)
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
