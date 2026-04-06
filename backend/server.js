@@ -13,6 +13,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
 
+// Health check (for Render/monitoring)
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/patient', require('./routes/patient'));
