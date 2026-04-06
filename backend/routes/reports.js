@@ -7,7 +7,7 @@ const pdfParse = require('pdf-parse');
 const { authenticate, authorize } = require('../middleware/auth');
 const Report = require('../models/Report');
 const User = require('../models/User');
-const { buildInsights } = require('../utils/medicalAnalyzer');
+const { analyzeMedicalText, buildInsights } = require('../utils/medicalAnalyzer');
 const { analyzeWithPython } = require('../services/pythonClient');
 
 // Configure multer for doctor/admin uploads (PDF reports)
@@ -123,7 +123,10 @@ router.post(
       // Use Python analyzer only (with OCR support via file path)
       let analysis = [];
       try {
-        const pyResult = await analyzeWithPython(extractedText, req.file.path);
+        // In deployments, the Python service cannot access this Node server's local file path.
+        // So we primarily send extracted text. OCR-from-file-path works only when both run on same machine.
+        const allowFilePath = process.env.PYTHON_ALLOW_FILE_PATH === 'true';
+        const pyResult = await analyzeWithPython(extractedText, allowFilePath ? req.file.path : null);
         if (pyResult && Array.isArray(pyResult.analysis)) {
           analysis = pyResult.analysis.map((p) => ({
             parameter: p.name || p.parameter || '',
@@ -149,6 +152,26 @@ router.post(
         }
       } catch (e) {
         console.error('Python analyzer error:', e.message);
+      }
+
+      // Fallback: if Python analysis failed/empty, analyze locally from extracted PDF text.
+      if (!analysis || analysis.length === 0) {
+        try {
+          const local = analyzeMedicalText(extractedText || '');
+          analysis = Array.isArray(local)
+            ? local.map((p) => ({
+                parameter: p.parameter || '',
+                value: p.value,
+                unit: p.unit || '',
+                status: ['low', 'normal', 'high'].includes(String(p.status || '').toLowerCase())
+                  ? String(p.status).toLowerCase()
+                  : 'normal',
+                range: p.range
+              }))
+            : [];
+        } catch (e) {
+          console.error('Local analyzer error:', e.message);
+        }
       }
 
       const insights = buildInsights(analysis || []);
