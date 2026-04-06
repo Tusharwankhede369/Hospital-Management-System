@@ -12,7 +12,12 @@ _env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(_env_path)
 
 _MODEL_NAME = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
-_embedder = SentenceTransformer(_MODEL_NAME)
+# NOTE: We lazy-load the embedder and FAISS index.
+# On platforms like Render, downloading the embedding model during module import
+# can delay server startup and cause port-scan timeouts.
+_embedder: SentenceTransformer | None = None
+_INDEX: faiss.IndexFlatL2 | None = None
+_DOCS: List[str] | None = None
 
 
 # --------- Structured sample hospital knowledge (you can edit/replace) ---------
@@ -157,6 +162,10 @@ def _build_knowledge() -> Tuple[faiss.IndexFlatL2, List[str]]:
     docs.extend(GENERAL_RULES)
 
 
+    global _embedder
+    if _embedder is None:
+        _embedder = SentenceTransformer(_MODEL_NAME)
+
     embeddings = _embedder.encode(docs, convert_to_numpy=True)
     dim = embeddings.shape[1]
     index = faiss.IndexFlatL2(dim)
@@ -164,16 +173,27 @@ def _build_knowledge() -> Tuple[faiss.IndexFlatL2, List[str]]:
     return index, docs
 
 
-_INDEX, _DOCS = _build_knowledge()
+def _ensure_kb() -> tuple[faiss.IndexFlatL2, List[str], SentenceTransformer]:
+    """
+    Ensure the embedding model + FAISS index are initialized.
+    This is intentionally lazy to keep FastAPI startup fast on Render.
+    """
+    global _INDEX, _DOCS, _embedder
+    if _INDEX is None or _DOCS is None or _embedder is None:
+        idx, docs = _build_knowledge()
+        _INDEX, _DOCS = idx, docs
+    # mypy/typing: _embedder is guaranteed not None here
+    return _INDEX, _DOCS, _embedder  # type: ignore[return-value]
 
 
 def _search(question: str, k: int = 5) -> List[str]:
     if not question.strip():
         return []
-    q_emb = _embedder.encode([question], convert_to_numpy=True)
-    D, I = _INDEX.search(q_emb, k)
+    index, docs, embedder = _ensure_kb()
+    q_emb = embedder.encode([question], convert_to_numpy=True)
+    D, I = index.search(q_emb, k)
     indices = I[0]
-    return [_DOCS[i] for i in indices if 0 <= i < len(_DOCS)]
+    return [docs[i] for i in indices if 0 <= i < len(docs)]
 
 
 def get_context_snippets(question: str, k: int = 5) -> str:
