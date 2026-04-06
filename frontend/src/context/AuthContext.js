@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 export const AuthContext = createContext();
 
@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token && !isFetching) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setIsFetching(true);
       fetchUser();
     } else if (!token) {
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = async () => {
     try {
-      const res = await axios.get('/api/auth/me');
+      const res = await api.get('/api/auth/me');
       console.log('User data from API:', res.data);
       // Ensure we have valid user data
       if (res.data && res.data.role) {
@@ -95,7 +95,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('user');
         setToken(null);
         setUser(null);
-        delete axios.defaults.headers.common['Authorization'];
+        delete api.defaults.headers.common['Authorization'];
         setLoading(false);
         setIsFetching(false);
       } else {
@@ -126,13 +126,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  // Login with email + password OR phone + password
+  const login = async (emailOrPhone, password) => {
     try {
-      const res = await axios.post('/api/auth/login', { email, password });
+      const body = emailOrPhone.includes('@')
+        ? { email: emailOrPhone.trim(), password }
+        : { phone: emailOrPhone.trim(), password };
+      const res = await api.post('/api/auth/login', body);
       const { token: newToken, user: userData } = res.data;
       localStorage.setItem('token', newToken);
       setToken(newToken);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
       return { success: true, user: userData };
@@ -146,11 +150,19 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const res = await axios.post('/api/auth/register', userData);
+      const res = await api.post('/api/auth/register', userData);
+      if (res.data.requiresVerification) {
+        return {
+          success: true,
+          requiresVerification: true,
+          email: res.data.email,
+          message: res.data.message
+        };
+      }
       const { token: newToken, user: userDataRes } = res.data;
       localStorage.setItem('token', newToken);
       setToken(newToken);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
       setUser(userDataRes);
       localStorage.setItem('user', JSON.stringify(userDataRes));
       return { success: true, user: userDataRes };
@@ -162,16 +174,34 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const verifyEmail = async (email, code) => {
+    try {
+      const res = await api.post('/api/auth/verify-email', { email, code });
+      const { token: newToken, user: userData } = res.data;
+      localStorage.setItem('token', newToken);
+      setToken(newToken);
+      api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+      return { success: true, user: userData };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Verification failed'
+      };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setToken(null);
     setUser(null);
-    delete axios.defaults.headers.common['Authorization'];
+    delete api.defaults.headers.common['Authorization'];
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, verifyEmail, logout }}>
       {children}
     </AuthContext.Provider>
   );

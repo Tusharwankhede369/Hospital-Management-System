@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-dotenv
+google-generativeai
+faiss-cpu
+sentence-transformers
+pytesseract
+pdf2image
+Pillow

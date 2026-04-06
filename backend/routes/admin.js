@@ -238,6 +238,28 @@ router.get('/appointments', authenticate, authorize('admin'), async (req, res) =
   }
 });
 
+// @route   DELETE /api/admin/appointments/:id
+// @desc    Delete appointment (Admin only)
+// @access  Private (Admin)
+router.delete('/appointments/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ message: 'Appointment id is required' });
+    }
+    const appointment = await Appointment.findById(id);
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+    await Payment.deleteMany({ appointment: appointment._id });
+    await Appointment.findByIdAndDelete(id);
+    res.json({ message: 'Appointment deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/admin/payments
 // @desc    Get all payments
 // @access  Private (Admin)

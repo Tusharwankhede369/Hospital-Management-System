@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 const DEBOUNCE_MS = 300;
 
@@ -19,7 +19,7 @@ const MedicineAutocomplete = ({ value, onChange, onSelect, placeholder = 'Type t
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setLoading(true);
-      axios.get('/api/medicines', { params: { search: value } })
+      api.get('/api/medicines', { params: { search: value } })
         .then(res => {
           setSuggestions(res.data || []);
           setShowDropdown(true);

@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const Appointment = require('../models/Appointment');
@@ -12,7 +13,11 @@ const moment = require('moment');
 router.post('/book', authenticate, authorize('patient'), async (req, res) => {
   try {
     const { doctor, department, appointmentDate, timeSlot, reason } = req.body;
-    
+    // Basic validation before hitting Mongo schema
+    if (!doctor || !appointmentDate || !timeSlot) {
+      return res.status(400).json({ message: 'Doctor, date and time slot are required.' });
+    }
+
     // Check if doctor exists and is active
     const doctorDoc = await User.findById(doctor);
     if (!doctorDoc || doctorDoc.role !== 'doctor' || !doctorDoc.isActive) {
@@ -166,6 +171,29 @@ router.put('/:id/cancel', authenticate, async (req, res) => {
     await appointment.save();
     
     res.json({ message: 'Appointment cancelled successfully', appointment });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/appointments/:id
+// @desc    Delete appointment (Admin only)
+// @access  Private (Admin)
+router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid appointment id' });
+    }
+    const appointment = await Appointment.findById(id);
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+    // Delete associated payment record(s) for this appointment
+    await Payment.deleteMany({ appointment: appointment._id });
+    await Appointment.findByIdAndDelete(id);
+    res.json({ message: 'Appointment deleted successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

@@ -8,6 +8,8 @@ import PaymentManagement from '../components/admin/PaymentManagement';
 import RoomManagement from '../components/admin/RoomManagement';
 import MedicineManagement from '../components/admin/MedicineManagement';
 import SalaryApproval from '../components/admin/SalaryApproval';
+import ReportAnalyzer from '../components/common/ReportAnalyzer';
+import ChatWidget from '../components/common/ChatWidget';
 
 const AdminDashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -32,6 +34,7 @@ const AdminDashboard = () => {
           <Link to="/admin/rooms">Room Management</Link>
           <Link to="/admin/medicines">Medicine Management</Link>
           <Link to="/admin/salaries">Salary Approval</Link>
+          <Link to="/admin/report-analyzer">Report Analyzer (OCR)</Link>
         </div>
         <div className="content-area">
           <Routes>
@@ -42,10 +45,12 @@ const AdminDashboard = () => {
             <Route path="rooms" element={<RoomManagement />} />
             <Route path="medicines" element={<MedicineManagement />} />
             <Route path="salaries" element={<SalaryApproval />} />
+            <Route path="report-analyzer" element={<ReportAnalyzer />} />
             <Route path="*" element={<Navigate to="/admin/dashboard" />} />
           </Routes>
         </div>
       </div>
+      <ChatWidget />
     </div>
   );
 };

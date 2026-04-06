@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Login from './pages/Login';
+import ResetPassword from './pages/ResetPassword';
 import Register from './pages/Register';
 import AdminRegister from './pages/AdminRegister';
 import DoctorRegister from './pages/DoctorRegister';
@@ -20,6 +21,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/register" element={<Register />} />
           <Route path="/register/admin" element={<AdminRegister />} />
           <Route path="/register/doctor" element={<DoctorRegister />} />

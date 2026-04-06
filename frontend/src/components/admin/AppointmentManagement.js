@@ -5,6 +5,7 @@ import moment from 'moment';
 const AppointmentManagement = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     fetchAppointments();
@@ -18,6 +19,24 @@ const AppointmentManagement = () => {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (apt) => {
+    const id = apt?._id ?? apt;
+    if (!id) return;
+    const idStr = typeof id === 'object' && id?.toString ? id.toString() : String(id);
+    if (!window.confirm('Are you sure you want to delete this booking? This cannot be undone.')) return;
+    setDeletingId(idStr);
+    try {
+      await axios.delete(`/api/admin/appointments/${idStr}`);
+      setAppointments(prev => prev.filter(a => String(a._id) !== idStr));
+    } catch (error) {
+      console.error(error);
+      const msg = error.response?.data?.message || error.message || 'Failed to delete appointment';
+      alert(msg);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -36,6 +55,7 @@ const AppointmentManagement = () => {
               <th>Doctor</th>
               <th>Department</th>
               <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -47,6 +67,16 @@ const AppointmentManagement = () => {
                 <td>{apt.doctor?.name}</td>
                 <td>{apt.department}</td>
                 <td>{apt.status}</td>
+                <td>
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleDelete(apt)}
+                    disabled={deletingId === String(apt._id)}
+                  >
+                    {deletingId === String(apt._id) ? 'Deleting...' : 'Delete'}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

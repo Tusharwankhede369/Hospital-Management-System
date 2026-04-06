@@ -5,6 +5,8 @@ import DoctorProfile from '../components/doctor/DoctorProfile';
 import DoctorAppointments from '../components/doctor/DoctorAppointments';
 import PatientRecords from '../components/doctor/PatientRecords';
 import LabReports from '../components/doctor/LabReports';
+import ReportAnalyzer from '../components/common/ReportAnalyzer';
+import ChatWidget from '../components/common/ChatWidget';
 
 const DoctorDashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -26,6 +28,7 @@ const DoctorDashboard = () => {
           <Link to="/doctor/appointments">Appointments</Link>
           <Link to="/doctor/patient-records">Patient Records</Link>
           <Link to="/doctor/lab-reports">Lab Reports</Link>
+          <Link to="/doctor/report-analyzer">Report Analyzer (OCR)</Link>
         </div>
         <div className="content-area">
           <Routes>
@@ -33,10 +36,12 @@ const DoctorDashboard = () => {
             <Route path="appointments" element={<DoctorAppointments />} />
             <Route path="patient-records" element={<PatientRecords />} />
             <Route path="lab-reports" element={<LabReports />} />
+            <Route path="report-analyzer" element={<ReportAnalyzer />} />
             <Route path="*" element={<Navigate to="/doctor/appointments" />} />
           </Routes>
         </div>
       </div>
+      <ChatWidget />
     </div>
   );
 };

@@ -16,7 +16,11 @@ const Register = () => {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const { register } = useContext(AuthContext);
+  const [showVerify, setShowVerify] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState('');
+  const [verifyCode, setVerifyCode] = useState('');
+  const [verifyError, setVerifyError] = useState('');
+  const { register, verifyEmail: verifyEmailApi } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -36,7 +40,10 @@ const Register = () => {
     setError('');
     setSuccess('');
     const result = await register(formData);
-    if (result.success) {
+    if (result.success && result.requiresVerification) {
+      setVerifyEmail(result.email);
+      setShowVerify(true);
+    } else if (result.success) {
       setSuccess('Registration successful! Redirecting...');
       setTimeout(() => navigate('/patient'), 2000);
     } else {
@@ -44,10 +51,64 @@ const Register = () => {
     }
   };
 
+  const handleVerifySubmit = async (e) => {
+    e.preventDefault();
+    setVerifyError('');
+    const result = await verifyEmailApi(verifyEmail, verifyCode);
+    if (result.success) {
+      setSuccess('Email verified! Redirecting...');
+      setTimeout(() => navigate('/patient'), 1500);
+    } else {
+      setVerifyError(result.message);
+    }
+  };
+
+  if (showVerify) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <div className="card" style={{ width: '420px' }}>
+          <h2 style={{ marginBottom: '10px', textAlign: 'center' }}>Verify your email</h2>
+          <p style={{ marginBottom: '20px', textAlign: 'center', color: '#64748b', fontSize: '14px' }}>
+            We sent a 6-digit code to your email. Only real email addresses can complete registration.
+          </p>
+          {verifyError && <div className="alert alert-error">{verifyError}</div>}
+          {success && <div className="alert alert-success">{success}</div>}
+          <form onSubmit={handleVerifySubmit}>
+            <div className="form-group">
+              <label>Email</label>
+              <input type="email" value={verifyEmail} readOnly style={{ background: '#f1f5f9' }} />
+            </div>
+            <div className="form-group">
+              <label>6-digit code from email</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={verifyCode}
+                onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="000000"
+                required
+              />
+            </div>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+              Verify and continue
+            </button>
+          </form>
+          <p style={{ marginTop: '15px', textAlign: 'center' }}>
+            <a href="/login">Back to login</a>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
       <div className="card" style={{ width: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
         <h2 style={{ marginBottom: '20px', textAlign: 'center' }}>Patient Registration</h2>
+        <p style={{ marginBottom: '15px', textAlign: 'center', fontSize: '13px', color: '#64748b' }}>
+          Email and phone number are required. We will verify your email with a code (no fake emails).
+        </p>
         {error && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
         <form onSubmit={handleSubmit}>
@@ -83,12 +144,13 @@ const Register = () => {
             />
           </div>
           <div className="form-group">
-            <label>Phone *</label>
+            <label>Phone number * (required)</label>
             <input
               type="tel"
               name="phone"
               value={formData.phone}
               onChange={handleChange}
+              placeholder="e.g. 9876543210"
               required
             />
           </div>

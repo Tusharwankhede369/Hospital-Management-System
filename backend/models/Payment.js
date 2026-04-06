@@ -21,8 +21,8 @@ const paymentSchema = new mongoose.Schema({
   },
   paymentMode: {
     type: String,
-    enum: ['upi', 'card', 'cash', 'net_banking'],
-    required: true
+    enum: ['pending', 'upi', 'card', 'cash', 'net_banking'],
+    default: 'pending'
   },
   paymentStatus: {
     type: String,

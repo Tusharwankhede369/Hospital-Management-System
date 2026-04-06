@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api';
 import MedicineAutocomplete from '../MedicineAutocomplete';
 
 const MedicineManagement = () => {
@@ -14,7 +14,7 @@ const MedicineManagement = () => {
 
   const fetchMedicines = async () => {
     try {
-      const res = await axios.get('/api/medicines');
+      const res = await api.get('/api/medicines');
       setMedicines(res.data);
     } catch (error) {
       console.error(error);
@@ -26,7 +26,7 @@ const MedicineManagement = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/medicines', formData);
+      await api.post('/api/medicines', formData);
       alert('Medicine added successfully!');
       setShowForm(false);
       setFormData({});
