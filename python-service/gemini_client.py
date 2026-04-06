@@ -8,14 +8,7 @@ from dotenv import load_dotenv
 _env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(_env_path)
 
-API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
-
-if not API_KEY:
-    raise RuntimeError("GEMINI_API_KEY is not set in .env")
-
-genai.configure(api_key=API_KEY)
-_model = genai.GenerativeModel(MODEL_NAME)
+_model = None
 
 SYSTEM_PROMPT = """
 You are the HMS Hospital AI assistant for CityCare Multispeciality Hospital.
@@ -27,8 +20,24 @@ If you are not sure about something, say you are not sure and suggest contacting
 """
 
 
+def _get_model():
+    global _model
+    if _model is not None:
+        return _model
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY is not set")
+
+    genai.configure(api_key=api_key)
+    _model = genai.GenerativeModel(model_name)
+    return _model
+
+
 def chat_with_gemini(question: str, extra_context: str = "") -> str:
     prompt = f"{SYSTEM_PROMPT}\n\nHospital context:\n{extra_context}\n\nUser question:\n{question}"
-    resp = _model.generate_content(prompt)
+    model = _get_model()
+    resp = model.generate_content(prompt)
     return (getattr(resp, "text", "") or "").strip()
 

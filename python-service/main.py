@@ -3,8 +3,6 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 from analyzer import analyze_text, extract_text_from_pdf
-from gemini_client import chat_with_gemini
-from rag import get_context_snippets
 
 app = FastAPI(title="HMS Python Service", version="0.1.0")
 
@@ -78,6 +76,10 @@ def chat(req: ChatRequest) -> ChatResponse:
         return ChatResponse(answer="Please enter a question about the hospital or lab reports.")
 
     try:
+        # Lazy imports keep server startup fast on Render (avoid torch/transformers import at boot).
+        from rag import get_context_snippets
+        from gemini_client import chat_with_gemini
+
         context = get_context_snippets(question, k=5)
         ans = chat_with_gemini(question, extra_context=context)
         return ChatResponse(answer=ans)
