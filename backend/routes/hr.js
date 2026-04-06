@@ -9,8 +9,84 @@ const Salary = require('../models/Salary');
 // @access  Private (HR)
 router.get('/staff', authenticate, authorize('hr'), async (req, res) => {
   try {
-    const staff = await User.find({ role: 'staff' }).select('-password');
+    const { search, staffType, department, isActive } = req.query;
+    const query = { role: 'staff' };
+
+    if (typeof isActive === 'string' && isActive.trim() !== '') {
+      if (isActive === 'true') query.isActive = true;
+      if (isActive === 'false') query.isActive = false;
+    }
+    if (staffType) query.staffType = staffType;
+    if (department) query.assignedDepartment = { $regex: department.toString().trim(), $options: 'i' };
+
+    if (search && search.toString().trim()) {
+      const s = search.toString().trim();
+      query.$or = [
+        { name: { $regex: s, $options: 'i' } },
+        { email: { $regex: s, $options: 'i' } },
+        { phone: { $regex: s, $options: 'i' } },
+      ];
+    }
+
+    const staff = await User.find(query).select('-password').sort({ name: 1 });
     res.json(staff);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/hr/staff/:id
+// @desc    Update staff details (HR)
+// @access  Private (HR)
+router.put('/staff/:id', authenticate, authorize('hr'), async (req, res) => {
+  try {
+    const staff = await User.findOne({ _id: req.params.id, role: 'staff' });
+    if (!staff) {
+      return res.status(404).json({ message: 'Staff not found' });
+    }
+
+    const { name, email, phone, staffType, assignedDepartment, isActive, address, gender } = req.body;
+
+    if (name !== undefined) staff.name = name;
+    if (email !== undefined) staff.email = email;
+    if (phone !== undefined) staff.phone = phone;
+    if (staffType !== undefined) staff.staffType = staffType;
+    if (assignedDepartment !== undefined) staff.assignedDepartment = assignedDepartment;
+    if (address !== undefined) staff.address = address;
+    if (gender !== undefined) staff.gender = gender;
+    if (isActive !== undefined) staff.isActive = isActive;
+
+    await staff.save();
+    const safe = staff.toObject();
+    delete safe.password;
+    res.json(safe);
+  } catch (error) {
+    console.error(error);
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'Email already exists' });
+    }
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/hr/staff/:id/active
+// @desc    Activate/Deactivate staff (HR)
+// @access  Private (HR)
+router.put('/staff/:id/active', authenticate, authorize('hr'), async (req, res) => {
+  try {
+    const staff = await User.findOne({ _id: req.params.id, role: 'staff' });
+    if (!staff) {
+      return res.status(404).json({ message: 'Staff not found' });
+    }
+
+    const { isActive } = req.body;
+    if (typeof isActive !== 'boolean') {
+      return res.status(400).json({ message: 'isActive must be boolean' });
+    }
+    staff.isActive = isActive;
+    await staff.save();
+    res.json({ message: `Staff ${isActive ? 'activated' : 'deactivated'} successfully` });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -90,6 +166,7 @@ router.get('/salaries', authenticate, authorize('hr'), async (req, res) => {
       .populate('employee', 'name email role staffType')
       .populate('preparedBy', 'name')
       .populate('approvedBy', 'name')
+      .populate('changeLog.changedBy', 'name email role')
       .sort({ year: -1, month: -1 });
     res.json(salaries);
   } catch (error) {
