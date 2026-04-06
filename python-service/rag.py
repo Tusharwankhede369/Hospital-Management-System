@@ -123,10 +123,9 @@ GENERAL_RULES: List[str] = [
 
 
 
-def _build_knowledge() -> Tuple[faiss.IndexFlatL2, List[str]]:
+def _build_docs() -> List[str]:
     """
-    Build a simple in-memory knowledge base for semantic search.
-    This uses the textual descriptions from the structured data above.
+    Build text docs used by both keyword and semantic retrieval.
     """
     docs: List[str] = []
 
@@ -159,6 +158,14 @@ def _build_knowledge() -> Tuple[faiss.IndexFlatL2, List[str]]:
 
     # General rules
     docs.extend(GENERAL_RULES)
+    return docs
+
+
+def _build_knowledge() -> Tuple[faiss.IndexFlatL2, List[str]]:
+    """
+    Build semantic-search index over docs (lazy, heavy).
+    """
+    docs = _build_docs()
 
 
     global _embedder
@@ -186,6 +193,37 @@ def _ensure_kb():
     return _INDEX, _DOCS, _embedder
 
 
+def _ensure_docs() -> List[str]:
+    global _DOCS
+    if _DOCS is None:
+        _DOCS = _build_docs()
+    return _DOCS
+
+
+def _keyword_search(question: str, k: int = 3) -> List[str]:
+    """
+    Fast retrieval for deployed environments (no torch/model load).
+    Scores docs by overlapping tokens.
+    """
+    q = re.sub(r"[^a-z0-9\s]+", " ", (question or "").lower())
+    tokens = [t for t in q.split() if len(t) > 2]
+    if not tokens:
+        return []
+
+    docs = _ensure_docs()
+    scored = []
+    for d in docs:
+        dl = d.lower()
+        score = 0
+        for t in tokens:
+            if t in dl:
+                score += 1
+        if score > 0:
+            scored.append((score, d))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [d for _, d in scored[:k]]
+
+
 def _search(question: str, k: int = 5) -> List[str]:
     if not question.strip():
         return []
@@ -201,7 +239,13 @@ def get_context_snippets(question: str, k: int = 5) -> str:
     Return top-k relevant knowledge snippets as a single context string.
     Used to provide hospital-specific context to the Gemini chatbot.
     """
-    snippets = _search(question, k=k)
+    # Default to fast keyword retrieval in deployment for low latency.
+    # Set RAG_MODE=semantic to force FAISS+embeddings retrieval.
+    rag_mode = (os.getenv("RAG_MODE", "keyword") or "keyword").lower()
+    if rag_mode == "semantic":
+        snippets = _search(question, k=k)
+    else:
+        snippets = _keyword_search(question, k=k)
     return "\n\n".join(snippets)
 
 

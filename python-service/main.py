@@ -80,7 +80,7 @@ def chat(req: ChatRequest) -> ChatResponse:
         from rag import get_context_snippets
         from gemini_client import chat_with_gemini
 
-        context = get_context_snippets(question, k=5)
+        context = get_context_snippets(question, k=3)
         ans = chat_with_gemini(question, extra_context=context)
         return ChatResponse(answer=ans)
     except Exception as exc:
