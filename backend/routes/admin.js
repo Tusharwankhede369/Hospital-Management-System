@@ -287,6 +287,34 @@ router.get('/payments', authenticate, authorize('admin'), async (req, res) => {
   }
 });
 
+// @route   DELETE /api/admin/payments/:id
+// @desc    Delete payment (Admin)
+// @access  Private (Admin)
+router.delete('/payments/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const payment = await Payment.findById(req.params.id);
+    if (!payment) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+
+    // If payment was tied to an appointment, keep appointment status consistent
+    if (payment.appointment) {
+      const apt = await Appointment.findById(payment.appointment);
+      if (apt) {
+        // Best-effort rollback; real systems would recompute from payments
+        apt.paymentStatus = 'pending';
+        await apt.save();
+      }
+    }
+
+    await Payment.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Payment deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   PUT /api/admin/salary/:id/approve
 // @desc    Approve salary
 // @access  Private (Admin)
@@ -346,6 +374,28 @@ router.get('/salaries', authenticate, authorize('admin'), async (req, res) => {
       .populate('approvedBy', 'name')
       .sort({ year: -1, month: -1 });
     res.json(salaries);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/admin/salary/:id
+// @desc    Delete salary record (Admin)
+// @access  Private (Admin)
+router.delete('/salary/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const salary = await Salary.findById(req.params.id);
+    if (!salary) {
+      return res.status(404).json({ message: 'Salary record not found' });
+    }
+
+    if (salary.status === 'paid') {
+      return res.status(400).json({ message: 'Cannot delete paid salary' });
+    }
+
+    await Salary.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Salary deleted successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

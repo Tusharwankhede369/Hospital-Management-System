@@ -35,6 +35,17 @@ const RoomManagement = () => {
     }
   };
 
+  const handleDelete = async (id, roomNumber) => {
+    const ok = window.confirm(`Delete room "${roomNumber}"?`);
+    if (!ok) return;
+    try {
+      await axios.delete(`/api/rooms/${id}`);
+      fetchRooms();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete room');
+    }
+  };
+
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
@@ -110,6 +121,7 @@ const RoomManagement = () => {
               <th>Floor</th>
               <th>Bed Count</th>
               <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -120,6 +132,15 @@ const RoomManagement = () => {
                 <td>{room.floor || 'N/A'}</td>
                 <td>{room.bedCount}</td>
                 <td>{room.status}</td>
+                <td>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handleDelete(room._id, room.roomNumber)}
+                    style={{ padding: '5px 10px', fontSize: '14px' }}
+                  >
+                    Delete
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

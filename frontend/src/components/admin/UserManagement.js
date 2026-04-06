@@ -35,6 +35,17 @@ const UserManagement = () => {
     }
   };
 
+  const handleDeactivate = async (id, name) => {
+    const ok = window.confirm(`Deactivate user "${name}"? They will not be able to log in.`);
+    if (!ok) return;
+    try {
+      await axios.delete(`/api/admin/users/${id}`);
+      fetchUsers();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to deactivate user');
+    }
+  };
+
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
@@ -157,6 +168,7 @@ const UserManagement = () => {
               <th>Role</th>
               <th>Phone</th>
               <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -167,6 +179,19 @@ const UserManagement = () => {
                 <td>{user.role}</td>
                 <td>{user.phone}</td>
                 <td>{user.isActive ? 'Active' : 'Inactive'}</td>
+                <td>
+                  {user.isActive ? (
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => handleDeactivate(user._id, user.name)}
+                      style={{ padding: '5px 10px', fontSize: '14px' }}
+                    >
+                      Deactivate
+                    </button>
+                  ) : (
+                    <span style={{ color: '#64748b', fontSize: 13 }}>—</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

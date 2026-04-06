@@ -36,6 +36,17 @@ const MedicineManagement = () => {
     }
   };
 
+  const handleDelete = async (id, name) => {
+    const ok = window.confirm(`Delete medicine "${name}"?`);
+    if (!ok) return;
+    try {
+      await api.delete(`/api/medicines/${id}`);
+      fetchMedicines();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete medicine');
+    }
+  };
+
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
@@ -104,6 +115,7 @@ const MedicineManagement = () => {
               <th>Type</th>
               <th>Stock</th>
               <th>Price</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -113,6 +125,15 @@ const MedicineManagement = () => {
                 <td>{medicine.type}</td>
                 <td>{medicine.stockQuantity}</td>
                 <td>₹{medicine.price || 'N/A'}</td>
+                <td>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handleDelete(medicine._id, medicine.name)}
+                    style={{ padding: '5px 10px', fontSize: '14px' }}
+                  >
+                    Delete
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

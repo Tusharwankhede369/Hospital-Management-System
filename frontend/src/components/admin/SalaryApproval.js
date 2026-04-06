@@ -38,6 +38,17 @@ const SalaryApproval = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    const ok = window.confirm('Delete this salary record? (Paid salaries cannot be deleted)');
+    if (!ok) return;
+    try {
+      await axios.delete(`/api/admin/salary/${id}`);
+      fetchSalaries();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete salary record');
+    }
+  };
+
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
@@ -80,6 +91,15 @@ const SalaryApproval = () => {
                       style={{ padding: '5px 10px', fontSize: '14px' }}
                     >
                       Mark as Paid
+                    </button>
+                  )}
+                  {salary.status !== 'paid' && (
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => handleDelete(salary._id)}
+                      style={{ padding: '5px 10px', fontSize: '14px', marginLeft: 8 }}
+                    >
+                      Delete
                     </button>
                   )}
                 </td>

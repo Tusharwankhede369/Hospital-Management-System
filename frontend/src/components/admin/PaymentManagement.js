@@ -21,6 +21,17 @@ const PaymentManagement = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    const ok = window.confirm('Delete this payment record?');
+    if (!ok) return;
+    try {
+      await axios.delete(`/api/admin/payments/${id}`);
+      fetchPayments();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete payment');
+    }
+  };
+
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
@@ -36,6 +47,7 @@ const PaymentManagement = () => {
               <th>Amount</th>
               <th>Mode</th>
               <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -47,6 +59,15 @@ const PaymentManagement = () => {
                 <td>₹{payment.amount}</td>
                 <td>{payment.paymentMode}</td>
                 <td>{payment.paymentStatus}</td>
+                <td>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handleDelete(payment._id)}
+                    style={{ padding: '5px 10px', fontSize: '14px' }}
+                  >
+                    Delete
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
