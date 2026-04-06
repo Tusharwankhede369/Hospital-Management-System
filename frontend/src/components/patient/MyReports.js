@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import moment from 'moment';
 
+const apiBaseUrl =
+  process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+
 const MyReports = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +54,7 @@ const MyReports = () => {
                   <td>{report.status}</td>
                   <td>
                     {report.reportFile && (
-                      <a href={`http://localhost:5000/${report.reportFile}`} target="_blank" rel="noopener noreferrer">
+                      <a href={`${apiBaseUrl}/${report.reportFile}`} target="_blank" rel="noopener noreferrer">
                         View Report
                       </a>
                     )}
