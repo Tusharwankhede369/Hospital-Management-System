@@ -9,13 +9,18 @@ const PYTHON_BASE_URL =
   process.env.PYTHON_BASE_URL ||
   'http://127.0.0.1:8000';
 
-const client = axios.create({
+const analyzeClient = axios.create({
   baseURL: PYTHON_BASE_URL,
-  timeout: Number(process.env.PYTHON_TIMEOUT_MS || 20000) // 20s default
+  timeout: Number(process.env.PYTHON_ANALYZE_TIMEOUT_MS || process.env.PYTHON_TIMEOUT_MS || 20000)
+});
+
+const chatClient = axios.create({
+  baseURL: PYTHON_BASE_URL,
+  timeout: Number(process.env.PYTHON_CHAT_TIMEOUT_MS || process.env.PYTHON_TIMEOUT_MS || 60000)
 });
 
 const analyzeWithPython = async (text, filePath) => {
-  const res = await client.post('/analyze', {
+  const res = await analyzeClient.post('/analyze', {
     text,
     file_path: filePath || null
   });
@@ -23,7 +28,7 @@ const analyzeWithPython = async (text, filePath) => {
 };
 
 const chatWithPython = async (message, user) => {
-  const res = await client.post('/chat', {
+  const res = await chatClient.post('/chat', {
     message,
     user_id: user ? user._id || user.id : null,
     role: user ? user.role : null

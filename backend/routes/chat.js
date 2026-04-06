@@ -17,8 +17,11 @@ router.post('/', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Chat error:', error.message);
     const isConnRefused = error.code === 'ECONNREFUSED' || error.message?.includes('ECONNREFUSED');
+    const isTimeout = error.code === 'ECONNABORTED' || error.message?.toLowerCase().includes('timeout');
     const msg = isConnRefused
       ? 'AI service is unavailable. Please ensure the Python service is running (port 8000).'
+      : isTimeout
+      ? 'AI assistant is taking longer than expected (service may be waking up). Please try again in a few seconds.'
       : (error.response?.data?.detail || error.message || 'Failed to get response from AI assistant.');
     res.status(500).json({ message: msg });
   }
