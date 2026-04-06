@@ -4,6 +4,8 @@ import axios from 'axios';
 const SalaryApproval = () => {
   const [salaries, setSalaries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null); // salary object
+  const [editData, setEditData] = useState({ baseSalary: '', bonus: '', deduction: '', overtime: '', notes: '', reason: '' });
 
   useEffect(() => {
     fetchSalaries();
@@ -49,11 +51,134 @@ const SalaryApproval = () => {
     }
   };
 
+  const openEdit = (salary) => {
+    setEditing(salary);
+    setEditData({
+      baseSalary: salary.baseSalary ?? '',
+      bonus: salary.bonus ?? 0,
+      deduction: salary.deduction ?? 0,
+      overtime: salary.overtime ?? 0,
+      notes: salary.notes ?? '',
+      reason: ''
+    });
+  };
+
+  const closeEdit = () => {
+    setEditing(null);
+    setEditData({ baseSalary: '', bonus: '', deduction: '', overtime: '', notes: '', reason: '' });
+  };
+
+  const handleEditSave = async (e) => {
+    e.preventDefault();
+    if (!editing?._id) return;
+    try {
+      await axios.put(`/api/admin/salary/${editing._id}`, {
+        baseSalary: editData.baseSalary,
+        bonus: editData.bonus,
+        deduction: editData.deduction,
+        overtime: editData.overtime,
+        notes: editData.notes,
+        editReason: editData.reason
+      });
+      closeEdit();
+      fetchSalaries();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update salary');
+    }
+  };
+
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
     <div>
       <h2>Salary Approval</h2>
+      {editing && (
+        <div
+          onClick={closeEdit}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+            padding: 16
+          }}
+        >
+          <div
+            className="card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: 'min(720px, 100%)', padding: 18, borderRadius: 14 }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0 }}>Edit Salary</h3>
+              <button className="btn" type="button" onClick={closeEdit}>Close</button>
+            </div>
+            <p style={{ marginTop: 8, color: '#64748b', fontSize: 13 }}>
+              Editing salary for <b>{editing.employee?.name || 'Employee'}</b> ({editing.month}/{editing.year}). Paid salaries cannot be edited.
+            </p>
+            <form onSubmit={handleEditSave} style={{ marginTop: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+                <div className="form-group">
+                  <label>Base Salary *</label>
+                  <input
+                    type="number"
+                    value={editData.baseSalary}
+                    onChange={(e) => setEditData((p) => ({ ...p, baseSalary: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Bonus</label>
+                  <input
+                    type="number"
+                    value={editData.bonus}
+                    onChange={(e) => setEditData((p) => ({ ...p, bonus: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Deduction</label>
+                  <input
+                    type="number"
+                    value={editData.deduction}
+                    onChange={(e) => setEditData((p) => ({ ...p, deduction: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Overtime</label>
+                  <input
+                    type="number"
+                    value={editData.overtime}
+                    onChange={(e) => setEditData((p) => ({ ...p, overtime: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Reason for change *</label>
+                <input
+                  type="text"
+                  value={editData.reason}
+                  onChange={(e) => setEditData((p) => ({ ...p, reason: e.target.value }))}
+                  placeholder="e.g. Corrected overtime after attendance verification"
+                  required
+                />
+                <small style={{ color: '#64748b' }}>This will be visible to HR in the salary history.</small>
+              </div>
+              <div className="form-group">
+                <label>Notes</label>
+                <textarea
+                  rows="2"
+                  value={editData.notes}
+                  onChange={(e) => setEditData((p) => ({ ...p, notes: e.target.value }))}
+                  placeholder="Optional notes for HR/admin"
+                />
+              </div>
+              <button type="submit" className="btn btn-primary">Save Changes</button>
+            </form>
+          </div>
+        </div>
+      )}
       <div className="card">
         <table className="table">
           <thead>
@@ -75,6 +200,15 @@ const SalaryApproval = () => {
                 <td>₹{salary.totalAmount}</td>
                 <td>{salary.status}</td>
                 <td>
+                  {salary.status !== 'paid' && (
+                    <button
+                      className="btn"
+                      onClick={() => openEdit(salary)}
+                      style={{ padding: '5px 10px', fontSize: '14px', marginRight: 8 }}
+                    >
+                      Edit
+                    </button>
+                  )}
                   {salary.status === 'pending' && (
                     <button
                       className="btn btn-success"

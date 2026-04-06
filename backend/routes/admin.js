@@ -363,6 +363,77 @@ router.put('/salary/:id/mark-paid', authenticate, authorize('admin'), async (req
   }
 });
 
+// @route   PUT /api/admin/salary/:id
+// @desc    Edit salary record (Admin)
+// @access  Private (Admin)
+router.put('/salary/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const salary = await Salary.findById(req.params.id);
+    if (!salary) {
+      return res.status(404).json({ message: 'Salary record not found' });
+    }
+
+    if (salary.status === 'paid') {
+      return res.status(400).json({ message: 'Cannot edit paid salary' });
+    }
+
+    const { baseSalary, bonus, deduction, overtime, notes, editReason } = req.body;
+
+    const before = {
+      baseSalary: salary.baseSalary,
+      bonus: salary.bonus,
+      deduction: salary.deduction,
+      overtime: salary.overtime,
+      totalAmount: salary.totalAmount,
+      notes: salary.notes
+    };
+
+    if (baseSalary !== undefined) salary.baseSalary = Number(baseSalary);
+    if (bonus !== undefined) salary.bonus = Number(bonus) || 0;
+    if (deduction !== undefined) salary.deduction = Number(deduction) || 0;
+    if (overtime !== undefined) salary.overtime = Number(overtime) || 0;
+    if (notes !== undefined) salary.notes = notes;
+
+    salary.totalAmount = salary.baseSalary + salary.bonus - salary.deduction + salary.overtime;
+
+    const after = {
+      baseSalary: salary.baseSalary,
+      bonus: salary.bonus,
+      deduction: salary.deduction,
+      overtime: salary.overtime,
+      totalAmount: salary.totalAmount,
+      notes: salary.notes
+    };
+
+    const hasMeaningfulChange =
+      before.baseSalary !== after.baseSalary ||
+      before.bonus !== after.bonus ||
+      before.deduction !== after.deduction ||
+      before.overtime !== after.overtime ||
+      before.totalAmount !== after.totalAmount ||
+      (before.notes || '') !== (after.notes || '');
+
+    if (hasMeaningfulChange) {
+      salary.changeLog = Array.isArray(salary.changeLog) ? salary.changeLog : [];
+      salary.changeLog.push({
+        changedBy: req.user._id,
+        reason: (editReason || '').toString().trim() || 'Admin updated salary',
+        before,
+        after
+      });
+    }
+
+    await salary.save();
+    res.json(salary);
+  } catch (error) {
+    console.error(error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message || 'Validation failed' });
+    }
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/admin/salaries
 // @desc    Get all salary records
 // @access  Private (Admin)
@@ -372,6 +443,7 @@ router.get('/salaries', authenticate, authorize('admin'), async (req, res) => {
       .populate('employee', 'name email role staffType')
       .populate('preparedBy', 'name')
       .populate('approvedBy', 'name')
+      .populate('changeLog.changedBy', 'name email role')
       .sort({ year: -1, month: -1 });
     res.json(salaries);
   } catch (error) {

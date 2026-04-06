@@ -58,7 +58,38 @@ const salarySchema = new mongoose.Schema({
   },
   notes: {
     type: String
-  }
+  },
+  changeLog: [
+    {
+      changedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      },
+      changedAt: {
+        type: Date,
+        default: Date.now
+      },
+      reason: {
+        type: String
+      },
+      before: {
+        baseSalary: Number,
+        bonus: Number,
+        deduction: Number,
+        overtime: Number,
+        totalAmount: Number,
+        notes: String
+      },
+      after: {
+        baseSalary: Number,
+        bonus: Number,
+        deduction: Number,
+        overtime: Number,
+        totalAmount: Number,
+        notes: String
+      }
+    }
+  ]
 }, {
   timestamps: true
 });

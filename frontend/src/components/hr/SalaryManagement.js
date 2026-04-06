@@ -7,6 +7,7 @@ const SalaryManagement = () => {
   const [formData, setFormData] = useState({});
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [history, setHistory] = useState(null); // salary object
 
   useEffect(() => {
     fetchSalaries();
@@ -155,6 +156,67 @@ const SalaryManagement = () => {
           </form>
         </div>
       )}
+      {history && (
+        <div
+          onClick={() => setHistory(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+            padding: 16
+          }}
+        >
+          <div
+            className="card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: 'min(900px, 100%)', padding: 18, borderRadius: 14, maxHeight: '80vh', overflowY: 'auto' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0 }}>Salary History</h3>
+              <button className="btn" type="button" onClick={() => setHistory(null)}>Close</button>
+            </div>
+            <p style={{ marginTop: 8, color: '#64748b', fontSize: 13 }}>
+              <b>{history.employee?.name || 'Employee'}</b> — {history.month}/{history.year} — Status: <b>{history.status}</b>
+            </p>
+
+            {history.notes ? (
+              <div style={{ marginTop: 10, padding: 12, background: '#f8fafc', borderRadius: 12 }}>
+                <b>Current notes:</b> {history.notes}
+              </div>
+            ) : null}
+
+            <div style={{ marginTop: 14 }}>
+              <h4 style={{ margin: '0 0 8px 0' }}>Admin change log</h4>
+              {Array.isArray(history.changeLog) && history.changeLog.length > 0 ? (
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {history.changeLog.slice().reverse().map((e, idx) => (
+                    <div key={idx} style={{ padding: 12, border: '1px solid #e2e8f0', borderRadius: 12 }}>
+                      <div style={{ fontSize: 13, color: '#0f172a' }}>
+                        <b>Reason:</b> {e.reason || '—'}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
+                        <b>Changed by:</b> {e.changedBy?.name || 'Admin'}{' '}
+                        <span style={{ marginLeft: 10 }} />
+                        <b>When:</b> {e.changedAt ? new Date(e.changedAt).toLocaleString() : '—'}
+                      </div>
+                      <div style={{ marginTop: 8, fontSize: 12 }}>
+                        <div><b>Before:</b> Base ₹{e.before?.baseSalary ?? '—'}, Bonus ₹{e.before?.bonus ?? '—'}, Deduction ₹{e.before?.deduction ?? '—'}, Overtime ₹{e.before?.overtime ?? '—'}, Total ₹{e.before?.totalAmount ?? '—'}</div>
+                        <div><b>After:</b> Base ₹{e.after?.baseSalary ?? '—'}, Bonus ₹{e.after?.bonus ?? '—'}, Deduction ₹{e.after?.deduction ?? '—'}, Overtime ₹{e.after?.overtime ?? '—'}, Total ₹{e.after?.totalAmount ?? '—'}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ color: '#64748b', fontSize: 13 }}>No admin edits recorded for this salary.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="card">
         <table className="table">
           <thead>
@@ -166,6 +228,7 @@ const SalaryManagement = () => {
               <th>Deduction</th>
               <th>Total</th>
               <th>Status</th>
+              <th>History</th>
             </tr>
           </thead>
           <tbody>
@@ -178,6 +241,16 @@ const SalaryManagement = () => {
                 <td>₹{salary.deduction}</td>
                 <td>₹{salary.totalAmount}</td>
                 <td>{salary.status}</td>
+                <td>
+                  <button
+                    className="btn"
+                    type="button"
+                    onClick={() => setHistory(salary)}
+                    style={{ padding: '5px 10px', fontSize: '14px' }}
+                  >
+                    View
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
