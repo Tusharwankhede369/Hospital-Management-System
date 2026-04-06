@@ -5,7 +5,6 @@ from typing import Dict, List, Tuple
 
 import faiss
 from dotenv import load_dotenv
-from sentence_transformers import SentenceTransformer
 
 # Load .env from python-service directory (works regardless of cwd)
 _env_path = Path(__file__).resolve().parent / ".env"
@@ -15,7 +14,7 @@ _MODEL_NAME = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 # NOTE: We lazy-load the embedder and FAISS index.
 # On platforms like Render, downloading the embedding model during module import
 # can delay server startup and cause port-scan timeouts.
-_embedder: SentenceTransformer | None = None
+_embedder = None
 _INDEX: faiss.IndexFlatL2 | None = None
 _DOCS: List[str] | None = None
 
@@ -163,7 +162,9 @@ def _build_knowledge() -> Tuple[faiss.IndexFlatL2, List[str]]:
 
 
     global _embedder
+    # Lazy import to avoid slow torch/transformers import during server startup
     if _embedder is None:
+        from sentence_transformers import SentenceTransformer  # local import (important)
         _embedder = SentenceTransformer(_MODEL_NAME)
 
     embeddings = _embedder.encode(docs, convert_to_numpy=True)
@@ -173,7 +174,7 @@ def _build_knowledge() -> Tuple[faiss.IndexFlatL2, List[str]]:
     return index, docs
 
 
-def _ensure_kb() -> tuple[faiss.IndexFlatL2, List[str], SentenceTransformer]:
+def _ensure_kb():
     """
     Ensure the embedding model + FAISS index are initialized.
     This is intentionally lazy to keep FastAPI startup fast on Render.
@@ -182,8 +183,7 @@ def _ensure_kb() -> tuple[faiss.IndexFlatL2, List[str], SentenceTransformer]:
     if _INDEX is None or _DOCS is None or _embedder is None:
         idx, docs = _build_knowledge()
         _INDEX, _DOCS = idx, docs
-    # mypy/typing: _embedder is guaranteed not None here
-    return _INDEX, _DOCS, _embedder  # type: ignore[return-value]
+    return _INDEX, _DOCS, _embedder
 
 
 def _search(question: str, k: int = 5) -> List[str]:
