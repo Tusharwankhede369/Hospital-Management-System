@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
 import '../css/login.css';
+import '../css/auth-pages.css';
 
 const ResetPassword = () => {
   const [email, setEmail] = useState('');
@@ -26,7 +27,7 @@ const ResetPassword = () => {
     }
     setLoading(true);
     try {
-      await axios.post('/api/auth/reset-password', {
+      await api.post('/api/auth/reset-password', {
         email: email.trim(),
         otp: otp.trim(),
         password,
@@ -42,21 +43,18 @@ const ResetPassword = () => {
 
   if (success) {
     return (
-      <div className="login-page">
-        <section className="login-form-panel" style={{ flex: '1 1 100%', borderRadius: '0' }}>
-          <div className="login-card">
+      <div className="auth-shell">
+          <div className="auth-card" style={{ maxWidth: 480 }}>
             <h2>Password reset</h2>
             <p className="subtitle">Your password has been updated. Redirecting to login…</p>
           </div>
-        </section>
       </div>
     );
   }
 
   return (
-    <div className="login-page">
-      <section className="login-form-panel" style={{ flex: '1 1 100%', borderRadius: '0' }}>
-        <div className="login-card">
+    <div className="auth-shell">
+        <div className="auth-card" style={{ maxWidth: 520 }}>
           <h2>Reset password</h2>
           <p className="subtitle">Enter your email, the 6-digit code from your email, and a new password.</p>
           {error && (
@@ -123,7 +121,6 @@ const ResetPassword = () => {
             </button>
           </div>
         </div>
-      </section>
     </div>
   );
 };

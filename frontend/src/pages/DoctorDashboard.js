@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Routes, Route, Link, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import DoctorProfile from '../components/doctor/DoctorProfile';
 import DoctorAppointments from '../components/doctor/DoctorAppointments';
@@ -7,42 +7,37 @@ import PatientRecords from '../components/doctor/PatientRecords';
 import LabReports from '../components/doctor/LabReports';
 import ReportAnalyzer from '../components/common/ReportAnalyzer';
 import ChatWidget from '../components/common/ChatWidget';
+import RoleDashboardLayout from '../components/layout/RoleDashboardLayout';
+import '../css/admin-dashboard.css';
 
 const DoctorDashboard = () => {
   const { user, logout } = useContext(AuthContext);
+  const navItems = [
+    { to: '/doctor/profile', label: 'My Profile', icon: '👨‍⚕️' },
+    { to: '/doctor/appointments', label: 'Appointments', icon: '📅' },
+    { to: '/doctor/patient-records', label: 'Patient Records', icon: '📁' },
+    { to: '/doctor/lab-reports', label: 'Lab Reports', icon: '🧪' },
+    { to: '/doctor/report-analyzer', label: 'Report Analyzer', icon: '📊' },
+  ];
 
   return (
-    <div>
-      <div className="navbar">
-        <div>
-          <h3>HMS - Doctor Dashboard</h3>
-        </div>
-        <div>
-          <span style={{ marginRight: '20px' }}>Welcome, Dr. {user?.name}</span>
-          <button className="btn btn-secondary" onClick={logout}>Logout</button>
-        </div>
-      </div>
-      <div className="main-content">
-        <div className="sidebar">
-          <Link to="/doctor/profile">My Profile</Link>
-          <Link to="/doctor/appointments">Appointments</Link>
-          <Link to="/doctor/patient-records">Patient Records</Link>
-          <Link to="/doctor/lab-reports">Lab Reports</Link>
-          <Link to="/doctor/report-analyzer">Report Analyzer (OCR)</Link>
-        </div>
-        <div className="content-area">
-          <Routes>
-            <Route path="profile" element={<DoctorProfile />} />
-            <Route path="appointments" element={<DoctorAppointments />} />
-            <Route path="patient-records" element={<PatientRecords />} />
-            <Route path="lab-reports" element={<LabReports />} />
-            <Route path="report-analyzer" element={<ReportAnalyzer />} />
-            <Route path="*" element={<Navigate to="/doctor/appointments" />} />
-          </Routes>
-        </div>
-      </div>
+    <RoleDashboardLayout
+      title="Doctor Dashboard"
+      subtitle="Clinical Workspace"
+      userName={`Dr. ${user?.name || 'Doctor'}`}
+      navItems={navItems}
+      onLogout={logout}
+    >
+      <Routes>
+        <Route path="profile" element={<DoctorProfile />} />
+        <Route path="appointments" element={<DoctorAppointments />} />
+        <Route path="patient-records" element={<PatientRecords />} />
+        <Route path="lab-reports" element={<LabReports />} />
+        <Route path="report-analyzer" element={<ReportAnalyzer />} />
+        <Route path="*" element={<Navigate to="/doctor/appointments" />} />
+      </Routes>
       <ChatWidget />
-    </div>
+    </RoleDashboardLayout>
   );
 };
 

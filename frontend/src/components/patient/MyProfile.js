@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import moment from 'moment';
+import api from '../../api';
 
 const MyProfile = () => {
   const [profile, setProfile] = useState(null);
@@ -14,7 +14,7 @@ const MyProfile = () => {
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get('/api/patient/profile');
+      const res = await api.get('/api/patient/profile');
       setProfile(res.data);
       setFormData({
         name: res.data.name || '',
@@ -47,7 +47,7 @@ const MyProfile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put('/api/patient/profile', formData);
+      await api.put('/api/patient/profile', formData);
       setMessage('Profile updated successfully!');
       fetchProfile();
     } catch (error) {
@@ -65,7 +65,7 @@ const MyProfile = () => {
           {message}
         </div>
       )}
-      <form onSubmit={handleSubmit} className="card">
+      <form onSubmit={handleSubmit} className="card" style={{ maxWidth: 900 }}>
         <div className="form-group">
           <label>Name</label>
           <input

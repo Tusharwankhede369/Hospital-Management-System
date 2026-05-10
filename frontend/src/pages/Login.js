@@ -38,6 +38,8 @@ const Login = () => {
         staff: '/staff',
         hr: '/hr',
         admin: '/admin',
+        owner: '/admin',
+        admin_manager: '/admin',
       }[role] || '/patient';
       navigate(dashboardPath);
     } else {
@@ -251,10 +253,10 @@ const Login = () => {
             <p>Don&apos;t have an account?</p>
             <div className="login-links">
               <a href="/register">Register as Patient</a>
-              <a href="/register/admin">Register as Admin</a>
+              <a href="/register/admin">Bootstrap Owner (first time only)</a>
             </div>
             <p className="login-note">
-              Doctor, Staff and HR accounts are created by Admin only. Phone number is required at registration.
+              Doctor, Staff and HR accounts are created by admin panel. Additional admins are owner-approved manager accounts.
             </p>
           </div>
         </div>

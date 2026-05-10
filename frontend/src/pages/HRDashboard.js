@@ -1,37 +1,43 @@
 import React, { useContext } from 'react';
-import { Routes, Route, Link, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import StaffManagement from '../components/hr/StaffManagement';
 import SalaryManagement from '../components/hr/SalaryManagement';
+import HRProfile from '../components/hr/HRProfile';
+import HiringPipeline from '../components/hr/HiringPipeline';
+import PayrollOps from '../components/hr/PayrollOps';
+import RoleDashboardLayout from '../components/layout/RoleDashboardLayout';
+import ChatWidget from '../components/common/ChatWidget';
+import '../css/admin-dashboard.css';
 
 const HRDashboard = () => {
   const { user, logout } = useContext(AuthContext);
+  const navItems = [
+    { to: '/hr/profile', label: 'My Profile', icon: '👤' },
+    { to: '/hr/staff', label: 'Staff Management', icon: '👥' },
+    { to: '/hr/salaries', label: 'Salary Management', icon: '💼' },
+    { to: '/hr/hiring', label: 'Hiring Pipeline', icon: '📌' },
+    { to: '/hr/payroll', label: 'Payroll Ops', icon: '💳' },
+  ];
 
   return (
-    <div>
-      <div className="navbar">
-        <div>
-          <h3>HMS - HR Dashboard</h3>
-        </div>
-        <div>
-          <span style={{ marginRight: '20px' }}>Welcome, {user?.name}</span>
-          <button className="btn btn-secondary" onClick={logout}>Logout</button>
-        </div>
-      </div>
-      <div className="main-content">
-        <div className="sidebar">
-          <Link to="/hr/staff">Staff Management</Link>
-          <Link to="/hr/salaries">Salary Management</Link>
-        </div>
-        <div className="content-area">
-          <Routes>
-            <Route path="staff" element={<StaffManagement />} />
-            <Route path="salaries" element={<SalaryManagement />} />
-            <Route path="*" element={<Navigate to="/hr/staff" />} />
-          </Routes>
-        </div>
-      </div>
-    </div>
+    <RoleDashboardLayout
+      title="HR Dashboard"
+      subtitle="People Operations"
+      userName={user?.name || 'HR'}
+      navItems={navItems}
+      onLogout={logout}
+    >
+      <Routes>
+        <Route path="profile" element={<HRProfile />} />
+        <Route path="staff" element={<StaffManagement />} />
+        <Route path="salaries" element={<SalaryManagement />} />
+        <Route path="hiring" element={<HiringPipeline />} />
+        <Route path="payroll" element={<PayrollOps />} />
+        <Route path="*" element={<Navigate to="/hr/profile" />} />
+      </Routes>
+      <ChatWidget />
+    </RoleDashboardLayout>
   );
 };
 

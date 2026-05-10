@@ -110,14 +110,8 @@ const ReportAnalyzer = () => {
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: '#0f172a0d',
-        padding: '24px 32px'
-      }}
-    >
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <div style={{ padding: '6px 4px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', animation: 'authFadeIn 0.3s ease' }}>
         <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Lab Report Dashboard</h2>
@@ -627,18 +621,7 @@ const ReportAnalyzer = () => {
                           </td>
                           <td>{rangeText}</td>
                         <td>
-                          <span
-                            style={{
-                              padding: '2px 8px',
-                              borderRadius: 999,
-                              fontSize: 11,
-                              fontWeight: 600,
-                              textTransform: 'uppercase',
-                              backgroundColor:
-                                item.status === 'normal' ? '#dcfce7' : '#fee2e2',
-                              color
-                            }}
-                          >
+                          <span className={`status-badge ${item.status === 'normal' ? 'status-active' : 'status-inactive'}`} style={{ color }}>
                             {statusLabel}
                           </span>
                         </td>

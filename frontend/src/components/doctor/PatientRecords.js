@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import moment from 'moment';
 import MedicineAutocomplete from '../MedicineAutocomplete';
+import api from '../../api';
 
 const PatientRecords = () => {
   const [records, setRecords] = useState([]);
@@ -17,13 +17,13 @@ const PatientRecords = () => {
 
   useEffect(() => {
     if (showNewForm) {
-      axios.get('/api/doctor/patients').then(res => setPatients(res.data || [])).catch(() => setPatients([]));
+      api.get('/api/doctor/patients').then(res => setPatients(res.data || [])).catch(() => setPatients([]));
     }
   }, [showNewForm]);
 
   const fetchRecords = async () => {
     try {
-      const res = await axios.get('/api/doctor/patient-records');
+      const res = await api.get('/api/doctor/patient-records');
       setRecords(res.data);
     } catch (error) {
       console.error(error);
@@ -42,7 +42,7 @@ const PatientRecords = () => {
         duration: Number(p.duration) || 7
       }));
     try {
-      await axios.post('/api/doctor/patient-record', {
+      await api.post('/api/doctor/patient-record', {
         patient: selectedRecord?.patient?._id || formData.patient,
         appointment: selectedRecord?.appointment?._id || formData.appointment || undefined,
         diagnosis: formData.diagnosis,
@@ -102,7 +102,7 @@ const PatientRecords = () => {
         duration: Number(p.duration) || 7
       }));
     try {
-      await axios.post('/api/doctor/patient-record', {
+      await api.post('/api/doctor/patient-record', {
         patient: formData.patient,
         appointment: formData.appointment || undefined,
         diagnosis: formData.diagnosis,
@@ -265,7 +265,7 @@ const PatientRecords = () => {
                       style={{ marginLeft: '8px' }}
                       onClick={async () => {
                         try {
-                          await axios.post('/api/medicines/schedule', {
+                          await api.post('/api/medicines/schedule', {
                             patientRecordId: record._id,
                             prescriptions: record.prescriptions.map(p => ({
                               medicine: p.medicine,

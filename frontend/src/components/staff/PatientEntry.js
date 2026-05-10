@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../../api';
 
 const PatientEntry = () => {
   const [formData, setFormData] = useState({
@@ -20,7 +20,7 @@ const PatientEntry = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/staff/patient-entry', formData);
+      await api.post('/api/staff/patient-entry', formData);
       setMessage('Patient added successfully!');
       setFormData({
         name: '',
@@ -44,7 +44,7 @@ const PatientEntry = () => {
           {message}
         </div>
       )}
-      <form onSubmit={handleSubmit} className="card">
+      <form onSubmit={handleSubmit} className="card" style={{ maxWidth: 860 }}>
         <div className="form-group">
           <label>Name *</label>
           <input type="text" name="name" value={formData.name} onChange={handleChange} required />

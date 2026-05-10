@@ -8,10 +8,95 @@ const Room = require('../models/Room');
 const Salary = require('../models/Salary');
 const moment = require('moment');
 
+const ADMIN_PANEL_ROLES = ['admin', 'owner', 'admin_manager'];
+
+// @route   POST /api/admin/create-admin-manager
+// @desc    Owner creates additional admin manager accounts
+// @access  Private (Owner only)
+router.post('/create-admin-manager', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
+  try {
+    const ownerExists = await User.exists({ role: 'owner', isActive: true });
+    const canManageAdmins =
+      req.user.role === 'owner' || (!ownerExists && req.user.role === 'admin');
+    if (!canManageAdmins) {
+      return res.status(403).json({ message: 'Only owner can create admin managers.' });
+    }
+
+    const { name, email, password, phone, adminPermissions = {} } = req.body;
+
+    if (!name || !email || !password || !phone) {
+      return res.status(400).json({ message: 'Name, email, password and phone are required.' });
+    }
+    if (String(password).length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+    }
+
+    const emailNorm = String(email).toLowerCase().trim();
+    const phoneNorm = String(phone).trim();
+    const exists = await User.findOne({ $or: [{ email: emailNorm }, { phone: phoneNorm }] });
+    if (exists) {
+      return res.status(400).json({ message: 'User with this email/phone already exists.' });
+    }
+
+    const user = new User({
+      name,
+      email: emailNorm,
+      password,
+      phone: phoneNorm,
+      role: 'admin_manager',
+      isActive: true,
+      adminPermissions: {
+        canManageUsers: adminPermissions.canManageUsers !== false,
+        canManageAppointments: adminPermissions.canManageAppointments !== false,
+        canManagePayments: adminPermissions.canManagePayments !== false,
+        canManageRooms: adminPermissions.canManageRooms !== false,
+        canManageMedicines: adminPermissions.canManageMedicines !== false,
+        canManageSalaries: adminPermissions.canManageSalaries !== false
+      }
+    });
+
+    await user.save();
+    res.status(201).json({
+      message: 'Admin manager created successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phone: user.phone,
+        adminPermissions: user.adminPermissions
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/admin-managers
+// @desc    Owner sees all admin managers
+// @access  Private (Owner only)
+router.get('/admin-managers', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
+  try {
+    const ownerExists = await User.exists({ role: 'owner', isActive: true });
+    const canView =
+      req.user.role === 'owner' || (!ownerExists && req.user.role === 'admin');
+    if (!canView) {
+      return res.status(403).json({ message: 'Only owner can view admin managers.' });
+    }
+
+    const managers = await User.find({ role: 'admin_manager' }).select('-password').sort({ createdAt: -1 });
+    res.json(managers);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   POST /api/admin/create-user
 // @desc    Create user (Doctor/Staff/HR)
 // @access  Private (Admin)
-router.post('/create-user', authenticate, authorize('admin'), async (req, res) => {
+router.post('/create-user', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
   try {
     const { name, email, password, phone, role, ...roleSpecificFields } = req.body;
     
@@ -49,7 +134,7 @@ router.post('/create-user', authenticate, authorize('admin'), async (req, res) =
 // @route   GET /api/admin/users
 // @desc    Get all users
 // @access  Private (Admin)
-router.get('/users', authenticate, authorize('admin'), async (req, res) => {
+router.get('/users', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
   try {
     const { role } = req.query;
     const query = {};
@@ -66,13 +151,17 @@ router.get('/users', authenticate, authorize('admin'), async (req, res) => {
 // @route   PUT /api/admin/users/:id
 // @desc    Update user
 // @access  Private (Admin)
-router.put('/users/:id', authenticate, authorize('admin'), async (req, res) => {
+router.put('/users/:id', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
     
+    if (user.role === 'owner' && req.user.role !== 'owner') {
+      return res.status(403).json({ message: 'Only owner can update owner account.' });
+    }
+
     const { name, email, phone, isActive, ...otherFields } = req.body;
     
     if (name) user.name = name;
@@ -98,13 +187,24 @@ router.put('/users/:id', authenticate, authorize('admin'), async (req, res) => {
 // @route   DELETE /api/admin/users/:id
 // @desc    Delete user (soft delete)
 // @access  Private (Admin)
-router.delete('/users/:id', authenticate, authorize('admin'), async (req, res) => {
+router.delete('/users/:id', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
     
+    if (user.role === 'owner' && req.user.role !== 'owner') {
+      return res.status(403).json({ message: 'Only owner can deactivate owner account.' });
+    }
+
+    if (user.role === 'owner') {
+      const activeOwners = await User.countDocuments({ role: 'owner', isActive: true });
+      if (activeOwners <= 1) {
+        return res.status(400).json({ message: 'At least one active owner must exist.' });
+      }
+    }
+
     user.isActive = false;
     await user.save();
     res.json({ message: 'User deactivated successfully' });
@@ -117,7 +217,7 @@ router.delete('/users/:id', authenticate, authorize('admin'), async (req, res) =
 // @route   GET /api/admin/dashboard
 // @desc    Get admin dashboard stats
 // @access  Private (Admin)
-router.get('/dashboard', authenticate, authorize('admin'), async (req, res) => {
+router.get('/dashboard', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
   try {
     const today = moment().startOf('day');
     const thisMonth = moment().startOf('month');
@@ -214,7 +314,7 @@ router.get('/dashboard', authenticate, authorize('admin'), async (req, res) => {
 // @route   GET /api/admin/appointments
 // @desc    Get all appointments
 // @access  Private (Admin)
-router.get('/appointments', authenticate, authorize('admin'), async (req, res) => {
+router.get('/appointments', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
   try {
     const { status, date, doctor } = req.query;
     const query = {};
@@ -241,7 +341,7 @@ router.get('/appointments', authenticate, authorize('admin'), async (req, res) =
 // @route   DELETE /api/admin/appointments/:id
 // @desc    Delete appointment (Admin only)
 // @access  Private (Admin)
-router.delete('/appointments/:id', authenticate, authorize('admin'), async (req, res) => {
+router.delete('/appointments/:id', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
   try {
     const { id } = req.params;
     if (!id) {
@@ -263,7 +363,7 @@ router.delete('/appointments/:id', authenticate, authorize('admin'), async (req,
 // @route   GET /api/admin/payments
 // @desc    Get all payments
 // @access  Private (Admin)
-router.get('/payments', authenticate, authorize('admin'), async (req, res) => {
+router.get('/payments', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
   try {
     const { startDate, endDate, paymentStatus } = req.query;
     const query = {};
@@ -290,7 +390,7 @@ router.get('/payments', authenticate, authorize('admin'), async (req, res) => {
 // @route   DELETE /api/admin/payments/:id
 // @desc    Delete payment (Admin)
 // @access  Private (Admin)
-router.delete('/payments/:id', authenticate, authorize('admin'), async (req, res) => {
+router.delete('/payments/:id', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
   try {
     const payment = await Payment.findById(req.params.id);
     if (!payment) {
@@ -318,7 +418,7 @@ router.delete('/payments/:id', authenticate, authorize('admin'), async (req, res
 // @route   PUT /api/admin/salary/:id/approve
 // @desc    Approve salary
 // @access  Private (Admin)
-router.put('/salary/:id/approve', authenticate, authorize('admin'), async (req, res) => {
+router.put('/salary/:id/approve', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
   try {
     const salary = await Salary.findById(req.params.id);
     if (!salary) {
@@ -339,7 +439,7 @@ router.put('/salary/:id/approve', authenticate, authorize('admin'), async (req, 
 // @route   PUT /api/admin/salary/:id/mark-paid
 // @desc    Mark salary as paid
 // @access  Private (Admin)
-router.put('/salary/:id/mark-paid', authenticate, authorize('admin'), async (req, res) => {
+router.put('/salary/:id/mark-paid', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
   try {
     const { paymentMode } = req.body;
     const salary = await Salary.findById(req.params.id);
@@ -366,7 +466,7 @@ router.put('/salary/:id/mark-paid', authenticate, authorize('admin'), async (req
 // @route   PUT /api/admin/salary/:id
 // @desc    Edit salary record (Admin)
 // @access  Private (Admin)
-router.put('/salary/:id', authenticate, authorize('admin'), async (req, res) => {
+router.put('/salary/:id', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
   try {
     const salary = await Salary.findById(req.params.id);
     if (!salary) {
@@ -437,7 +537,7 @@ router.put('/salary/:id', authenticate, authorize('admin'), async (req, res) => 
 // @route   GET /api/admin/salaries
 // @desc    Get all salary records
 // @access  Private (Admin)
-router.get('/salaries', authenticate, authorize('admin'), async (req, res) => {
+router.get('/salaries', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
   try {
     const salaries = await Salary.find()
       .populate('employee', 'name email role staffType')
@@ -455,7 +555,7 @@ router.get('/salaries', authenticate, authorize('admin'), async (req, res) => {
 // @route   DELETE /api/admin/salary/:id
 // @desc    Delete salary record (Admin)
 // @access  Private (Admin)
-router.delete('/salary/:id', authenticate, authorize('admin'), async (req, res) => {
+router.delete('/salary/:id', authenticate, authorize(...ADMIN_PANEL_ROLES), async (req, res) => {
   try {
     const salary = await Salary.findById(req.params.id);
     if (!salary) {

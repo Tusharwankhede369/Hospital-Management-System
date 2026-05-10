@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
 import moment from 'moment';
+import api from '../../api';
 
 const BookAppointment = () => {
   const [doctors, setDoctors] = useState([]);
@@ -11,42 +11,41 @@ const BookAppointment = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    fetchDoctors();
-  }, []);
-
-  useEffect(() => {
-    if (selectedDoctor && selectedDate) {
-      fetchAvailableSlots();
-    }
-  }, [selectedDoctor, selectedDate]);
-
-  const fetchDoctors = async () => {
+  const fetchDoctors = useCallback(async () => {
     try {
-      const res = await axios.get('/api/patient/doctors');
+      const res = await api.get('/api/patient/doctors');
       setDoctors(res.data);
     } catch (error) {
       console.error(error);
     }
-  };
+  }, []);
 
-  const fetchAvailableSlots = async () => {
+  useEffect(() => {
+    fetchDoctors();
+  }, [fetchDoctors]);
+
+  const fetchAvailableSlots = useCallback(async () => {
     try {
-      const res = await axios.get('/api/appointments/available-slots', {
+      const res = await api.get('/api/appointments/available-slots', {
         params: { doctor: selectedDoctor, date: selectedDate }
       });
       setAvailableSlots(res.data.availableSlots || []);
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [selectedDoctor, selectedDate]);
+
+  useEffect(() => {
+    if (!selectedDoctor || !selectedDate) return;
+    fetchAvailableSlots();
+  }, [selectedDoctor, selectedDate, fetchAvailableSlots]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
     try {
-      await axios.post('/api/appointments/book', {
+      await api.post('/api/appointments/book', {
         doctor: selectedDoctor,
         appointmentDate: selectedDate,
         timeSlot: formData.timeSlot,
@@ -71,7 +70,7 @@ const BookAppointment = () => {
           {message}
         </div>
       )}
-      <form onSubmit={handleSubmit} className="card">
+      <form onSubmit={handleSubmit} className="card" style={{ maxWidth: 860 }}>
         <div className="form-group">
           <label>Select Doctor *</label>
           <select

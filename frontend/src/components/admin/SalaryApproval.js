@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api';
 
 const SalaryApproval = () => {
   const [salaries, setSalaries] = useState([]);
@@ -13,7 +13,7 @@ const SalaryApproval = () => {
 
   const fetchSalaries = async () => {
     try {
-      const res = await axios.get('/api/admin/salaries');
+      const res = await api.get('/api/admin/salaries');
       setSalaries(res.data);
     } catch (error) {
       console.error(error);
@@ -24,7 +24,7 @@ const SalaryApproval = () => {
 
   const handleApprove = async (id) => {
     try {
-      await axios.put(`/api/admin/salary/${id}/approve`);
+      await api.put(`/api/admin/salary/${id}/approve`);
       fetchSalaries();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to approve');
@@ -33,7 +33,7 @@ const SalaryApproval = () => {
 
   const handleMarkPaid = async (id) => {
     try {
-      await axios.put(`/api/admin/salary/${id}/mark-paid`, { paymentMode: 'bank_transfer' });
+      await api.put(`/api/admin/salary/${id}/mark-paid`, { paymentMode: 'bank_transfer' });
       fetchSalaries();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to mark as paid');
@@ -44,7 +44,7 @@ const SalaryApproval = () => {
     const ok = window.confirm('Delete this salary record? (Paid salaries cannot be deleted)');
     if (!ok) return;
     try {
-      await axios.delete(`/api/admin/salary/${id}`);
+      await api.delete(`/api/admin/salary/${id}`);
       fetchSalaries();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to delete salary record');
@@ -72,7 +72,7 @@ const SalaryApproval = () => {
     e.preventDefault();
     if (!editing?._id) return;
     try {
-      await axios.put(`/api/admin/salary/${editing._id}`, {
+      await api.put(`/api/admin/salary/${editing._id}`, {
         baseSalary: editData.baseSalary,
         bonus: editData.bonus,
         deduction: editData.deduction,
@@ -91,7 +91,10 @@ const SalaryApproval = () => {
 
   return (
     <div>
-      <h2>Salary Approval</h2>
+      <div className="table-toolbar">
+        <h2>Salary Approval</h2>
+        <div style={{ color: 'var(--muted)', fontSize: 13 }}>Approve, edit, mark paid and audit-ready operations</div>
+      </div>
       {editing && (
         <div
           onClick={closeEdit}
@@ -198,7 +201,11 @@ const SalaryApproval = () => {
                 <td>{salary.employee?.role || '—'}</td>
                 <td>{salary.month}/{salary.year}</td>
                 <td>₹{salary.totalAmount}</td>
-                <td>{salary.status}</td>
+                <td>
+                  <span className={`status-badge status-${salary.status}`}>
+                    {salary.status}
+                  </span>
+                </td>
                 <td>
                   {salary.status !== 'paid' && (
                     <button

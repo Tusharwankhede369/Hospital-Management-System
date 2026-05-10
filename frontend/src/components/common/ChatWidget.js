@@ -49,12 +49,13 @@ const ChatWidget = () => {
           border: 'none',
           background: 'transparent',
           padding: 0,
-          boxShadow: '0 10px 25px rgba(15,23,42,0.35)',
+          boxShadow: '0 12px 28px rgba(37,99,235,0.35)',
           cursor: 'pointer',
           zIndex: 1000,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          animation: 'pulseGlow 2.1s ease-in-out infinite'
         }}
         aria-label="Open HMS AI assistant"
       >
@@ -76,7 +77,7 @@ const ChatWidget = () => {
             maxHeight: 420,
             background: '#ffffff',
             borderRadius: 16,
-            boxShadow: '0 20px 40px rgba(15,23,42,0.35)',
+            boxShadow: '0 20px 40px rgba(37,99,235,0.24)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -87,8 +88,8 @@ const ChatWidget = () => {
             style={{
               padding: '10px 14px',
               borderBottom: '1px solid #e2e8f0',
-              background: '#0f172a',
-              color: '#e5e7eb'
+              background: 'linear-gradient(135deg,#1e3a8a,#2563eb,#14b8a6)',
+              color: '#f8fafc'
             }}
           >
             <div style={{ fontSize: 13, fontWeight: 600 }}>HMS Hospital AI Assistant</div>

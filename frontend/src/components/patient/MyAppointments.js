@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import moment from 'moment';
+import api from '../../api';
 
 const MyAppointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -12,7 +12,7 @@ const MyAppointments = () => {
 
   const fetchAppointments = async () => {
     try {
-      const res = await axios.get('/api/patient/appointments');
+      const res = await api.get('/api/patient/appointments');
       setAppointments(res.data);
     } catch (error) {
       console.error(error);
@@ -24,7 +24,7 @@ const MyAppointments = () => {
   const handleCancel = async (id) => {
     if (window.confirm('Are you sure you want to cancel this appointment?')) {
       try {
-        await axios.put(`/api/appointments/${id}/cancel`);
+        await api.put(`/api/appointments/${id}/cancel`);
         fetchAppointments();
       } catch (error) {
         alert(error.response?.data?.message || 'Failed to cancel appointment');
@@ -36,7 +36,7 @@ const MyAppointments = () => {
 
   return (
     <div>
-      <h2>My Appointments</h2>
+      <div className="table-toolbar"><h2>My Appointments</h2></div>
       <div className="card">
         <table className="table">
           <thead>
@@ -63,16 +63,7 @@ const MyAppointments = () => {
                   <td>{apt.doctor?.name}</td>
                   <td>{apt.department}</td>
                   <td>
-                    <span style={{
-                      padding: '5px 10px',
-                      borderRadius: '4px',
-                      backgroundColor: apt.status === 'completed' ? '#d4edda' : 
-                                      apt.status === 'confirmed' ? '#d1ecf1' : 
-                                      apt.status === 'cancelled' ? '#f8d7da' : '#fff3cd',
-                      color: apt.status === 'completed' ? '#155724' : 
-                            apt.status === 'confirmed' ? '#0c5460' : 
-                            apt.status === 'cancelled' ? '#721c24' : '#856404'
-                    }}>
+                    <span className={`status-badge status-${apt.status}`}>
                       {apt.status}
                     </span>
                   </td>

@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import '../css/auth-pages.css';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -65,8 +66,8 @@ const Register = () => {
 
   if (showVerify) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <div className="card" style={{ width: '420px' }}>
+      <div className="auth-shell">
+        <div className="auth-card" style={{ maxWidth: 460 }}>
           <h2 style={{ marginBottom: '10px', textAlign: 'center' }}>Verify your email</h2>
           <p style={{ marginBottom: '20px', textAlign: 'center', color: '#64748b', fontSize: '14px' }}>
             We sent a 6-digit code to your email. Only real email addresses can complete registration.
@@ -103,8 +104,8 @@ const Register = () => {
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-      <div className="card" style={{ width: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+    <div className="auth-shell">
+      <div className="auth-card" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
         <h2 style={{ marginBottom: '20px', textAlign: 'center' }}>Patient Registration</h2>
         <p style={{ marginBottom: '15px', textAlign: 'center', fontSize: '13px', color: '#64748b' }}>
           Email and phone number are required. We will verify your email with a code (no fake emails).
@@ -112,6 +113,7 @@ const Register = () => {
         {error && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
         <form onSubmit={handleSubmit}>
+          <div className="auth-grid">
           <div className="form-group">
             <label>Name *</label>
             <input
@@ -195,8 +197,8 @@ const Register = () => {
               <option value="O-">O-</option>
             </select>
           </div>
-          <h4 style={{ marginTop: '20px', marginBottom: '10px' }}>Emergency Contact</h4>
-          <div className="form-group">
+          <h4 style={{ marginTop: '20px', marginBottom: '10px' }} className="full">Emergency Contact</h4>
+          <div className="form-group full">
             <label>Name</label>
             <input
               type="text"
@@ -223,9 +225,12 @@ const Register = () => {
               onChange={handleChange}
             />
           </div>
+          <div className="auth-actions full">
           <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
             Register
           </button>
+          </div>
+          </div>
         </form>
         <p style={{ marginTop: '15px', textAlign: 'center' }}>
           Already have an account? <a href="/login">Login</a>

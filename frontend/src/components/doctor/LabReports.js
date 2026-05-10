@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import moment from 'moment';
+import api from '../../api';
 
 const LabReports = () => {
   const [reports, setReports] = useState([]);
@@ -14,13 +14,13 @@ const LabReports = () => {
 
   useEffect(() => {
     if (showForm) {
-      axios.get('/api/doctor/patients').then(res => setPatients(res.data || [])).catch(() => setPatients([]));
+      api.get('/api/doctor/patients').then(res => setPatients(res.data || [])).catch(() => setPatients([]));
     }
   }, [showForm]);
 
   const fetchReports = async () => {
     try {
-      const res = await axios.get('/api/doctor/lab-reports');
+      const res = await api.get('/api/doctor/lab-reports');
       setReports(res.data);
     } catch (error) {
       console.error(error);
@@ -30,7 +30,7 @@ const LabReports = () => {
   const handleRequest = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/doctor/request-lab-test', formData);
+      await api.post('/api/doctor/request-lab-test', formData);
       alert('Lab test requested successfully!');
       setShowForm(false);
       setFormData({});
@@ -42,7 +42,7 @@ const LabReports = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div className="table-toolbar">
         <h2>Lab Reports</h2>
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
           Request Lab Test
@@ -112,7 +112,11 @@ const LabReports = () => {
                 <td>{moment(report.createdAt).format('DD/MM/YYYY')}</td>
                 <td>{report.patient?.name}</td>
                 <td>{report.testName}</td>
-                <td>{report.status}</td>
+                <td>
+                  <span className={`status-badge status-${report.status}`}>
+                    {report.status}
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>

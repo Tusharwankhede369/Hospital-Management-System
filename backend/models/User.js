@@ -21,8 +21,16 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['patient', 'doctor', 'staff', 'hr', 'admin'],
+    enum: ['patient', 'doctor', 'staff', 'hr', 'admin', 'owner', 'admin_manager'],
     required: true
+  },
+  adminPermissions: {
+    canManageUsers: { type: Boolean, default: true },
+    canManageAppointments: { type: Boolean, default: true },
+    canManagePayments: { type: Boolean, default: true },
+    canManageRooms: { type: Boolean, default: true },
+    canManageMedicines: { type: Boolean, default: true },
+    canManageSalaries: { type: Boolean, default: true }
   },
   phone: {
     type: String,

@@ -160,12 +160,12 @@
 }
 
 .login-page {
-  --login-bg: #e0f2fe;
-  --login-bg-end: #f0f9ff;
-  --login-panel: #f8fafc;
-  --login-panel-end: #f1f5f9;
-  --login-accent: #0284c7;
-  --login-accent-hover: #0ea5e9;
+  --login-bg: #dbeafe;
+  --login-bg-end: #eff6ff;
+  --login-panel: #ffffff;
+  --login-panel-end: #f8fafc;
+  --login-accent: #2563eb;
+  --login-accent-hover: #1d4ed8;
   --login-text: #0f172a;
   --login-muted: #64748b;
   --login-input-bg: #f8fafc;
@@ -258,7 +258,7 @@
   /* Fancy shape: rounded left edge (wave-like curve) */
   border-top-left-radius: 4rem;
   border-bottom-left-radius: 4rem;
-  box-shadow: -8px 0 32px rgba(2, 132, 199, 0.12);
+  box-shadow: -10px 0 38px rgba(30, 64, 175, 0.12);
 }
 
 .login-card {
@@ -382,8 +382,8 @@
   font-weight: 600;
   font-family: inherit;
   color: #fff;
-  background: linear-gradient(135deg, var(--login-accent), #0369a1);
-  border: 1px solid rgba(2, 132, 199, 0.4);
+  background: linear-gradient(135deg, #1d4ed8, #2563eb, #0f766e);
+  border: 1px solid rgba(37, 99, 235, 0.4);
   border-radius: 12px;
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.2s;
@@ -393,7 +393,7 @@
 
 .login-form .btn-login:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(2, 132, 199, 0.35);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
 }
 
 .login-form .btn-login:active {

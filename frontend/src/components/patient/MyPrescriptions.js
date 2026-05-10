@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api';
 import moment from 'moment';
 
 const MyPrescriptions = () => {
@@ -12,7 +12,7 @@ const MyPrescriptions = () => {
 
   const fetchPrescriptions = async () => {
     try {
-      const res = await axios.get('/api/patient/prescriptions');
+      const res = await api.get('/api/patient/prescriptions');
       setPrescriptions(res.data);
     } catch (error) {
       console.error(error);

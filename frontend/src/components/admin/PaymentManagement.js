@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import moment from 'moment';
+import api from '../../api';
 
 const PaymentManagement = () => {
   const [payments, setPayments] = useState([]);
@@ -12,7 +12,7 @@ const PaymentManagement = () => {
 
   const fetchPayments = async () => {
     try {
-      const res = await axios.get('/api/admin/payments');
+      const res = await api.get('/api/admin/payments');
       setPayments(res.data);
     } catch (error) {
       console.error(error);
@@ -25,7 +25,7 @@ const PaymentManagement = () => {
     const ok = window.confirm('Delete this payment record?');
     if (!ok) return;
     try {
-      await axios.delete(`/api/admin/payments/${id}`);
+      await api.delete(`/api/admin/payments/${id}`);
       fetchPayments();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to delete payment');
@@ -58,7 +58,11 @@ const PaymentManagement = () => {
                 <td>{payment.paymentType}</td>
                 <td>₹{payment.amount}</td>
                 <td>{payment.paymentMode}</td>
-                <td>{payment.paymentStatus}</td>
+                <td>
+                  <span className={`status-badge status-${String(payment.paymentStatus || '').toLowerCase()}`}>
+                    {payment.paymentStatus}
+                  </span>
+                </td>
                 <td>
                   <button
                     className="btn btn-danger"

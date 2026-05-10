@@ -1,33 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
 import moment from 'moment';
+import api from '../../api';
 
 const DoctorAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ status: '', date: '' });
 
-  useEffect(() => {
-    fetchAppointments();
-  }, [filter]);
-
-  const fetchAppointments = async () => {
+  const fetchAppointments = useCallback(async () => {
     try {
       const params = {};
       if (filter.status) params.status = filter.status;
       if (filter.date) params.date = filter.date;
-      const res = await axios.get('/api/doctor/appointments', { params });
+      const res = await api.get('/api/doctor/appointments', { params });
       setAppointments(res.data);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
 
   const updateStatus = async (id, status) => {
     try {
-      await axios.put(`/api/doctor/appointments/${id}/status`, { status });
+      await api.put(`/api/doctor/appointments/${id}/status`, { status });
       fetchAppointments();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to update status');
@@ -38,8 +38,10 @@ const DoctorAppointments = () => {
 
   return (
     <div>
-      <h2>My Appointments</h2>
-      <div className="card" style={{ marginBottom: '20px' }}>
+      <div className="table-toolbar">
+        <h2>My Appointments</h2>
+      </div>
+      <div className="card" style={{ marginBottom: '20px', maxWidth: 980 }}>
         <div style={{ display: 'flex', gap: '10px' }}>
           <div className="form-group" style={{ flex: 1 }}>
             <label>Status</label>
@@ -85,7 +87,11 @@ const DoctorAppointments = () => {
                   <td>{apt.timeSlot}</td>
                   <td>{apt.patient?.name}</td>
                   <td>{apt.tokenNumber}</td>
-                  <td>{apt.status}</td>
+                  <td>
+                    <span className={`status-badge status-${apt.status}`}>
+                      {apt.status}
+                    </span>
+                  </td>
                   <td>
                     {apt.status === 'pending' && (
                       <>

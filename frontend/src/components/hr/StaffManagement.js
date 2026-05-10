@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api';
 
 const StaffManagement = () => {
   const [staff, setStaff] = useState([]);
@@ -16,7 +16,7 @@ const StaffManagement = () => {
   const fetchStaff = async (override = {}) => {
     try {
       const params = { ...filters, ...override };
-      const res = await axios.get('/api/hr/staff', { params });
+      const res = await api.get('/api/hr/staff', { params });
       setStaff(res.data);
     } catch (error) {
       console.error(error);
@@ -58,7 +58,7 @@ const StaffManagement = () => {
     e.preventDefault();
     if (!editing?._id) return;
     try {
-      await axios.put(`/api/hr/staff/${editing._id}`, editData);
+      await api.put(`/api/hr/staff/${editing._id}`, editData);
       closeEdit();
       fetchStaff();
     } catch (error) {
@@ -71,7 +71,7 @@ const StaffManagement = () => {
     const ok = window.confirm(`${nextActive ? 'Activate' : 'Deactivate'} ${s.name}?`);
     if (!ok) return;
     try {
-      await axios.put(`/api/hr/staff/${s._id}/active`, { isActive: nextActive });
+      await api.put(`/api/hr/staff/${s._id}/active`, { isActive: nextActive });
       fetchStaff();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to update status');
@@ -239,7 +239,11 @@ const StaffManagement = () => {
                 <td>{s.phone}</td>
                 <td>{s.staffType}</td>
                 <td>{s.assignedDepartment || 'N/A'}</td>
-                <td>{s.isActive ? 'Active' : 'Inactive'}</td>
+                <td>
+                  <span className={`status-badge ${s.isActive ? 'status-active' : 'status-inactive'}`}>
+                    {s.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </td>
                 <td>
                   <button className="btn" type="button" onClick={() => openEdit(s)} style={{ padding: '5px 10px', fontSize: 14, marginRight: 8 }}>
                     Edit

@@ -34,11 +34,27 @@ exports.authorize = (...roles) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    if (!roles.includes(req.user.role)) {
+    const expandedRoles = new Set(roles);
+    if (roles.includes('admin')) {
+      expandedRoles.add('owner');
+      expandedRoles.add('admin_manager');
+    }
+
+    if (!expandedRoles.has(req.user.role)) {
       return res.status(403).json({ message: 'Access denied. Insufficient permissions.' });
     }
 
     next();
   };
+};
+
+exports.authorizeOwner = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  if (req.user.role !== 'owner') {
+    return res.status(403).json({ message: 'Only owner can perform this action.' });
+  }
+  next();
 };
 

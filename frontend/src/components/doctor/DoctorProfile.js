@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api';
 
 const DoctorProfile = () => {
   const [profile, setProfile] = useState(null);
@@ -12,7 +12,7 @@ const DoctorProfile = () => {
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get('/api/doctor/profile');
+      const res = await api.get('/api/doctor/profile');
       setProfile(res.data);
       setFormData({
         qualification: res.data.qualification || '',
@@ -50,7 +50,7 @@ const DoctorProfile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put('/api/doctor/profile', formData);
+      await api.put('/api/doctor/profile', formData);
       setMessage('Profile updated successfully!');
       fetchProfile();
     } catch (error) {
@@ -68,7 +68,7 @@ const DoctorProfile = () => {
           {message}
         </div>
       )}
-      <form onSubmit={handleSubmit} className="card">
+      <form onSubmit={handleSubmit} className="card" style={{ maxWidth: 920 }}>
         <div className="form-group">
           <label>Name</label>
           <input type="text" value={profile?.name} disabled />

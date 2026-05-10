@@ -12,6 +12,19 @@ const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
+// @route   GET /api/auth/admin-bootstrap-status
+// @desc    Check whether first owner/admin bootstrap is still available
+// @access  Public
+router.get('/admin-bootstrap-status', async (req, res) => {
+  try {
+    const exists = await User.exists({ role: { $in: ['owner', 'admin', 'admin_manager'] } });
+    res.json({ canBootstrapOwner: !exists });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   POST /api/auth/register
 // @desc    Register patient (only patients can self-register). Phone mandatory. Sends verification OTP to email.
 // @access  Public
@@ -284,16 +297,17 @@ router.post('/verify-email', [
   }
 });
 
-// Fixed admin registration password (only this password allows admin registration)
-const ADMIN_REGISTRATION_PASSWORD = 'Tushar@hmsadmin$1977';
+// First-owner bootstrap key (only used when no owner/admin exists yet)
+const OWNER_BOOTSTRAP_KEY = process.env.OWNER_BOOTSTRAP_KEY || 'Owner@Setup#2026';
 
 // @route   POST /api/auth/register-admin
-// @desc    Register admin (fixed password required; only first admin can register)
+// @desc    Register first owner account only (bootstrap). After first owner/admin exists, disabled.
 // @access  Public
 router.post('/register-admin', [
   body('name').notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('Please provide a valid email'),
-  body('password').notEmpty().withMessage('Password is required'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('registrationKey').notEmpty().withMessage('Owner bootstrap key is required'),
   body('phone').notEmpty().withMessage('Phone number is required'),
 ], async (req, res) => {
   try {
@@ -302,31 +316,33 @@ router.post('/register-admin', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone, registrationKey } = req.body;
 
-    if (password !== ADMIN_REGISTRATION_PASSWORD) {
-      return res.status(403).json({ message: 'Invalid admin registration password.' });
+    if (registrationKey !== OWNER_BOOTSTRAP_KEY) {
+      return res.status(403).json({ message: 'Invalid owner bootstrap key.' });
     }
 
-    // Check if any admin exists
-    const existingAdmin = await User.findOne({ role: 'admin' });
-    if (existingAdmin) {
-      return res.status(400).json({ message: 'Admin already exists. Please contact existing admin.' });
+    // Only first bootstrap owner is allowed from public route
+    const existingPrivileged = await User.findOne({ role: { $in: ['owner', 'admin', 'admin_manager'] } });
+    if (existingPrivileged) {
+      return res.status(400).json({ message: 'Owner/admin already exists. New admins are owner-created only.' });
     }
 
     // Check if user already exists
-    let user = await User.findOne({ email });
+    const emailNorm = email.toLowerCase().trim();
+    const phoneNorm = String(phone).trim();
+    let user = await User.findOne({ $or: [{ email: emailNorm }, { phone: phoneNorm }] });
     if (user) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Create admin user
+    // Create first owner user
     user = new User({
       name,
-      email,
+      email: emailNorm,
       password,
-      phone,
-      role: 'admin',
+      phone: phoneNorm,
+      role: 'owner',
       isActive: true
     });
 
@@ -349,7 +365,7 @@ router.post('/register-admin', [
   }
 });
 
-// Registration code for Doctor/Staff/HR self-registration (must match DEFAULT_NEW_USER_PASSWORD or set REGISTRATION_CODE)
+// Registration code for Doctor/Staff/HR self-registration
 const getRegistrationCode = () => process.env.REGISTRATION_CODE || process.env.DEFAULT_NEW_USER_PASSWORD;
 
 // @route   POST /api/auth/register-doctor

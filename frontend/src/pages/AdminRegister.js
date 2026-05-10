@@ -1,17 +1,35 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
+import '../css/auth-pages.css';
 
 const AdminRegister = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    phone: ''
+    registrationKey: '',
+    phone: '',
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [canBootstrapOwner, setCanBootstrapOwner] = useState(true);
+  const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const res = await api.get('/api/auth/admin-bootstrap-status');
+        setCanBootstrapOwner(Boolean(res.data?.canBootstrapOwner));
+      } catch (_) {
+        setCanBootstrapOwner(false);
+      } finally {
+        setChecking(false);
+      }
+    };
+    run();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -22,11 +40,11 @@ const AdminRegister = () => {
     setError('');
     setSuccess('');
     try {
-      const res = await axios.post('/api/auth/register-admin', formData);
+      const res = await api.post('/api/auth/register-admin', formData);
       if (res.data.token) {
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('user', JSON.stringify(res.data.user));
-        setSuccess('Admin registration successful! Redirecting...');
+        setSuccess('Owner account created successfully! Redirecting...');
         setTimeout(() => navigate('/admin'), 2000);
       }
     } catch (error) {
@@ -34,10 +52,30 @@ const AdminRegister = () => {
     }
   };
 
+  if (checking) {
+    return <div className="loading">Checking owner bootstrap status...</div>;
+  }
+
+  if (!canBootstrapOwner) {
+    return (
+      <div className="auth-shell">
+        <div className="auth-card" style={{ maxWidth: 520 }}>
+          <h2>Owner Registration Closed</h2>
+          <p style={{ marginTop: 8 }}>
+            Owner/admin already exists. Additional admin managers must be created from the owner account inside admin panel.
+          </p>
+          <button type="button" className="btn btn-primary" style={{ marginTop: 14 }} onClick={() => navigate('/login')}>
+            Back to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-      <div className="card" style={{ width: '400px' }}>
-        <h2 style={{ marginBottom: '20px', textAlign: 'center' }}>Admin Registration</h2>
+    <div className="auth-shell">
+      <div className="auth-card" style={{ maxWidth: 520 }}>
+        <h2 style={{ marginBottom: '20px', textAlign: 'center' }}>Owner Registration</h2>
         {error && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
         <form onSubmit={handleSubmit}>
@@ -62,16 +100,27 @@ const AdminRegister = () => {
             />
           </div>
           <div className="form-group">
-            <label>Admin registration password *</label>
+            <label>Account password *</label>
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Fixed password required"
+              placeholder="Set secure account password"
               required
             />
-            <small style={{ color: '#666' }}>Contact system owner for the admin registration password.</small>
+          </div>
+          <div className="form-group">
+            <label>Owner bootstrap key *</label>
+            <input
+              type="password"
+              name="registrationKey"
+              value={formData.registrationKey}
+              onChange={handleChange}
+              placeholder="Owner setup key"
+              required
+            />
+            <small style={{ color: '#666' }}>Used only once to create the first owner.</small>
           </div>
           <div className="form-group">
             <label>Phone *</label>
@@ -84,14 +133,14 @@ const AdminRegister = () => {
             />
           </div>
           <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-            Register as Admin
+            Create Owner Account
           </button>
         </form>
         <p style={{ marginTop: '15px', textAlign: 'center' }}>
           Already have an account? <a href="/login">Login</a>
         </p>
         <p style={{ marginTop: '10px', textAlign: 'center', fontSize: '12px', color: '#666' }}>
-          Note: Only the first admin can register. If admin exists, contact existing admin.
+          After bootstrap, owner can create multiple admin managers from User Management.
         </p>
       </div>
     </div>

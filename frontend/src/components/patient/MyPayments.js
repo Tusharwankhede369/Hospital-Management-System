@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import moment from 'moment';
+import api from '../../api';
 
 const MyPayments = () => {
   const [payments, setPayments] = useState([]);
@@ -14,7 +14,7 @@ const MyPayments = () => {
 
   const fetchPayments = async () => {
     try {
-      const res = await axios.get('/api/patient/payments');
+      const res = await api.get('/api/patient/payments');
       setPayments(res.data);
     } catch (error) {
       console.error(error);
@@ -25,7 +25,7 @@ const MyPayments = () => {
 
   const fetchUnpaid = async () => {
     try {
-      const res = await axios.get('/api/patient/unpaid-appointments');
+      const res = await api.get('/api/patient/unpaid-appointments');
       setUnpaidAppointments(res.data || []);
     } catch (err) {
       console.error(err);
@@ -39,7 +39,7 @@ const MyPayments = () => {
       return;
     }
     try {
-      await axios.post('/api/payments', {
+      await api.post('/api/payments', {
         appointment: appointment._id,
         paymentType: 'appointment',
         amount,
@@ -58,7 +58,7 @@ const MyPayments = () => {
 
   return (
     <div>
-      <h2>Payments</h2>
+      <div className="table-toolbar"><h2>Payments</h2></div>
       {unpaidAppointments.length > 0 && (
         <div className="card" style={{ marginBottom: '20px' }}>
           <h3>Pay here (Unpaid appointments)</h3>
@@ -115,12 +115,7 @@ const MyPayments = () => {
                   <td>₹{payment.amount}</td>
                   <td>{payment.paymentMode}</td>
                   <td>
-                    <span style={{
-                      padding: '5px 10px',
-                      borderRadius: '4px',
-                      backgroundColor: payment.paymentStatus === 'paid' ? '#d4edda' : '#fff3cd',
-                      color: payment.paymentStatus === 'paid' ? '#155724' : '#856404'
-                    }}>
+                    <span className={`status-badge status-${payment.paymentStatus}`}>
                       {payment.paymentStatus}
                     </span>
                   </td>

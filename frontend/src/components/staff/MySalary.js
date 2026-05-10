@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api';
 
 const MySalary = () => {
   const [salaries, setSalaries] = useState([]);
@@ -8,7 +8,7 @@ const MySalary = () => {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await axios.get('/api/staff/my-salary');
+        const res = await api.get('/api/staff/my-salary');
         setSalaries(res.data || []);
       } catch (err) {
         console.error(err);
@@ -47,7 +47,11 @@ const MySalary = () => {
                   <td>₹{s.bonus || 0}</td>
                   <td>₹{s.deduction || 0}</td>
                   <td>₹{s.totalAmount}</td>
-                  <td>{s.status}</td>
+                  <td>
+                    <span className={`status-badge status-${s.status}`}>
+                      {s.status}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
