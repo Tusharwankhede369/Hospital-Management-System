@@ -26,16 +26,26 @@ router.get('/profile', authenticate, authorize('patient'), async (req, res) => {
 // @access  Private (Patient)
 router.put('/profile', authenticate, authorize('patient'), async (req, res) => {
   try {
-    const { name, phone, address, gender, dateOfBirth, bloodGroup, emergencyContact } = req.body;
+    const { name, phone, address, gender, dateOfBirth, bloodGroup, emergencyContact, allergies, heightCm, weightKg } = req.body;
     
     const user = await User.findById(req.user._id);
     if (name) user.name = name;
     if (phone) user.phone = phone;
-    if (address) user.address = address;
+    if (address !== undefined) user.address = address;
     if (gender) user.gender = gender;
     if (dateOfBirth) user.dateOfBirth = dateOfBirth;
     if (bloodGroup) user.bloodGroup = bloodGroup;
     if (emergencyContact) user.emergencyContact = emergencyContact;
+    if (allergies !== undefined) {
+      user.allergies = Array.isArray(allergies)
+        ? allergies.map((item) => String(item).trim()).filter(Boolean)
+        : String(allergies)
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean);
+    }
+    if (heightCm !== undefined && heightCm !== '') user.heightCm = Number(heightCm);
+    if (weightKg !== undefined && weightKg !== '') user.weightKg = Number(weightKg);
     
     await user.save();
     res.json(user);
@@ -114,6 +124,38 @@ router.get('/medicine-schedule', authenticate, authorize('patient'), async (req,
       .populate('medicine')
       .sort({ startDate: -1 });
     res.json(schedules);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/patient/medicine-schedule/:id/mark-taken
+// @desc    Patient marks a dose as taken
+// @access  Private (Patient)
+router.put('/medicine-schedule/:id/mark-taken', authenticate, authorize('patient'), async (req, res) => {
+  try {
+    const { timing, given } = req.body;
+    if (!['morning', 'afternoon', 'night'].includes(timing)) {
+      return res.status(400).json({ message: 'Invalid timing' });
+    }
+
+    const schedule = await MedicineSchedule.findOne({
+      _id: req.params.id,
+      patient: req.user._id
+    });
+    if (!schedule) {
+      return res.status(404).json({ message: 'Schedule not found' });
+    }
+    if (!schedule.timing[timing]) {
+      return res.status(400).json({ message: 'This dose is not prescribed' });
+    }
+
+    schedule.timing[timing].given = Boolean(given);
+    schedule.timing[timing].givenAt = given ? new Date() : null;
+    schedule.timing[timing].givenBy = given ? req.user._id : null;
+    await schedule.save();
+    res.json(schedule);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

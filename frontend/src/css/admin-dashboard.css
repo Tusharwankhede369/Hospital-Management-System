@@ -411,6 +411,12 @@
   color: #92400e;
 }
 
+.status-confirmed,
+.status-completed {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
 .admin-toast {
   position: fixed;
   right: 18px;
