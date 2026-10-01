@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import PatientOverview from '../components/patient/PatientOverview';
 import BookAppointment from '../components/patient/BookAppointment';
 import MyAppointments from '../components/patient/MyAppointments';
 import MyProfile from '../components/patient/MyProfile';
@@ -11,6 +12,7 @@ import MedicineSchedule from '../components/patient/MedicineSchedule';
 import RoleDashboardLayout from '../components/layout/RoleDashboardLayout';
 import ChatWidget from '../components/common/ChatWidget';
 import '../css/admin-dashboard.css';
+import '../css/patient-dashboard.css';
 
 const PatientDashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -21,6 +23,7 @@ const PatientDashboard = () => {
     navigate('/login');
   };
   const navItems = [
+    { to: '/patient/overview', label: 'Health Overview', icon: '🏠' },
     { to: '/patient/profile', label: 'My Profile', icon: '🙍' },
     { to: '/patient/appointments', label: 'My Appointments', icon: '📅' },
     { to: '/patient/book-appointment', label: 'Book Appointment', icon: '➕' },
@@ -32,13 +35,15 @@ const PatientDashboard = () => {
 
   return (
     <RoleDashboardLayout
-      title="Patient Dashboard"
+      title="Patient Care"
       subtitle="Personal Health Hub"
       userName={user?.name || 'Patient'}
       navItems={navItems}
       onLogout={handleLogout}
+      className="patient-hub"
     >
       <Routes>
+        <Route path="overview" element={<PatientOverview />} />
         <Route path="profile" element={<MyProfile />} />
         <Route path="appointments" element={<MyAppointments />} />
         <Route path="book-appointment" element={<BookAppointment />} />
@@ -46,7 +51,7 @@ const PatientDashboard = () => {
         <Route path="prescriptions" element={<MyPrescriptions />} />
         <Route path="medicine-schedule" element={<MedicineSchedule />} />
         <Route path="payments" element={<MyPayments />} />
-        <Route path="*" element={<Navigate to="/patient/profile" />} />
+        <Route path="*" element={<Navigate to="/patient/overview" />} />
       </Routes>
       <ChatWidget />
     </RoleDashboardLayout>
@@ -54,4 +59,3 @@ const PatientDashboard = () => {
 };
 
 export default PatientDashboard;
-

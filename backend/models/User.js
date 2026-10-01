@@ -54,6 +54,16 @@ const userSchema = new mongoose.Schema({
     phone: String,
     relation: String
   },
+  allergies: {
+    type: [String],
+    default: []
+  },
+  heightCm: {
+    type: Number
+  },
+  weightKg: {
+    type: Number
+  },
   // Doctor specific fields
   qualification: {
     type: String

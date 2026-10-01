@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
-const RoleDashboardLayout = ({ title, subtitle, userName, navItems, onLogout, children }) => {
+const RoleDashboardLayout = ({ title, subtitle, userName, navItems, onLogout, children, className = '' }) => {
   const [query, setQuery] = useState('');
   const location = useLocation();
 
@@ -10,8 +10,10 @@ const RoleDashboardLayout = ({ title, subtitle, userName, navItems, onLogout, ch
     [navItems, query]
   );
 
+  const pageLabel = location.pathname.split('/').pop().replace(/-/g, ' ') || 'Dashboard';
+
   return (
-    <div className="role-dashboard-shell">
+    <div className={`role-dashboard-shell ${className}`.trim()}>
       <aside className="role-sidebar">
         <div className="role-brand">
           <span className="role-brand-icon">H+</span>
@@ -41,7 +43,7 @@ const RoleDashboardLayout = ({ title, subtitle, userName, navItems, onLogout, ch
       <main className="role-main">
         <header className="role-topbar">
           <div>
-            <h2>{location.pathname.split('/').pop().replace(/-/g, ' ') || 'Dashboard'}</h2>
+            <h2 className="role-page-title">{pageLabel}</h2>
             <p>Welcome, {userName}</p>
           </div>
           <button className="btn btn-danger" onClick={onLogout}>
